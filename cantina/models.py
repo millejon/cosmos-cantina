@@ -61,7 +61,7 @@ class Recipe(models.Model):
 
 class Tab(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    opened = models.DateTimeField(default=timezone.now())
+    opened = models.DateTimeField(default=timezone.now)
     due = models.DateTimeField(default=a_week_from_now)
     closed = models.DateTimeField(null=True, blank=True)
 
@@ -76,7 +76,7 @@ class Tab(models.Model):
 class Purchase(models.Model):
     tab = models.ForeignKey(Tab, on_delete=models.CASCADE)
     drink = models.ForeignKey(Drink, on_delete=models.CASCADE)
-    time = models.DateTimeField(default=timezone.now())
+    time = models.DateTimeField(default=timezone.now)
     quantity = models.IntegerField()
 
     class Meta:
