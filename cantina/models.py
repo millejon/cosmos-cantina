@@ -18,7 +18,7 @@ class Customer(models.Model):
             return self.last_name
 
 
-class Drinks(models.Model):
+class Drink(models.Model):
     name = models.CharField(max_length=100, unique=True)
     price = models.DecimalField(max_digits=7, decimal_places=2)
 
