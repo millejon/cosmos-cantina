@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import Customer, Drink
+from . import models
 
-admin.site.register(Customer)
-admin.site.register(Drink)
+admin.site.register(models.Customer)
+admin.site.register(models.Drink)
+admin.site.register(models.Ingredient)
