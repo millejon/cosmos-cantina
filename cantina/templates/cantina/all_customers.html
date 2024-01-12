@@ -1,0 +1,28 @@
+{% extends "cantina/base.html" %}
+
+{% block title %}Customers{% endblock %}
+
+{% block header %}
+  <h1>Customers</h1>
+{% endblock %}
+
+{% block content %}
+  <table>
+    <thead>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Planet</th>
+      <th>UBA Number</th>
+    </thead>
+    <tbody>
+      {% for customer in customers %}
+      <tr>
+        <td>{{ customer.id }}</td>
+        <td>{{ customer.first_name }} {{ customer.last_name }}</td>
+        <td>{{ customer.planet }}</td>
+        <td>{{ customer.uba }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
