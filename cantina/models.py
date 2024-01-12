@@ -63,7 +63,7 @@ class Tab(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     opened = models.DateTimeField(default=timezone.now())
     due = models.DateTimeField(default=a_week_from_now)
-    closed = models.DateTimeField(null=True)
+    closed = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ["customer", "opened"]
