@@ -56,7 +56,7 @@ class Recipe(models.Model):
         ordering = ["drink", "-amount"]
 
     def __str__(self):
-        return f"{self.drink.name} - {self.ingredient.name}: {self.amount}"
+        return f"{self.drink.name} - {self.ingredient.name}"
 
 
 class Tab(models.Model):
