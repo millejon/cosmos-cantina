@@ -1,4 +1,10 @@
 from django.db import models
+from django.utils import timezone
+
+
+def a_week_from_now():
+    """Add 7 days to the current point in time."""
+    return timezone.now() + timezone.timedelta(days=7)
 
 
 class Customer(models.Model):
@@ -55,8 +61,8 @@ class Recipe(models.Model):
 
 class Tab(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    opened = models.DateTimeField()
-    due = models.DateTimeField()
+    opened = models.DateTimeField(default=timezone.now())
+    due = models.DateTimeField(default=a_week_from_now)
     closed = models.DateTimeField(null=True)
 
     class Meta:
