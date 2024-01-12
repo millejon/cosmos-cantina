@@ -71,3 +71,17 @@ class Tab(models.Model):
 
     def __str__(self):
         return f"{self.customer.last_name}: {self.opened}"
+
+
+class Purchase(models.Model):
+    tab = models.ForeignKey(Tab, on_delete=models.CASCADE)
+    drink = models.ForeignKey(Drink, on_delete=models.CASCADE)
+    time = models.DateTimeField(default=timezone.now())
+    quantity = models.IntegerField()
+
+    class Meta:
+        unique_together = ["tab", "time"]
+        ordering = ["-time"]
+
+    def __str__(self):
+        return f"{self.tab.customer.last_name}: {self.drink.name}"
