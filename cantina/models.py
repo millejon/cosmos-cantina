@@ -38,3 +38,16 @@ class Ingredient(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Recipe(models.Model):
+    drink = models.ForeignKey(Drink, on_delete=models.CASCADE)
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=4, decimal_places=2)
+
+    class Meta:
+        unique_together = ["drink", "ingredient"]
+        ordering = ["drink", "-amount"]
+
+    def __str__(self):
+        return f"{self.drink.name} - {self.ingredient.name}"
