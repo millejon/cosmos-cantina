@@ -51,3 +51,17 @@ class Recipe(models.Model):
 
     def __str__(self):
         return f"{self.drink.name} - {self.ingredient.name}: {self.amount}"
+
+
+class Tab(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    opened = models.DateTimeField()
+    due = models.DateTimeField()
+    closed = models.DateTimeField(null=True)
+
+    class Meta:
+        unique_together = ["customer", "opened"]
+        ordering = ["customer__last_name", "-opened"]
+
+    def __str__(self):
+        return f"{self.customer.last_name}: {self.opened}"
