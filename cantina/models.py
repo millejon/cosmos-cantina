@@ -9,6 +9,7 @@ class Customer(models.Model):
 
     class Meta:
         unique_together = ["last_name", "first_name"]
+        ordering = ["last_name"]
 
     def __str__(self):
         if self.first_name:
@@ -20,6 +21,9 @@ class Customer(models.Model):
 class Drinks(models.Model):
     name = models.CharField(max_length=100, unique=True)
     price = models.DecimalField(max_digits=7, decimal_places=2)
+
+    class Meta:
+        ordering = ["name"]
 
     def __str__(self):
         return self.name
