@@ -35,8 +35,20 @@ class Drink(models.Model):
         return self.name
 
 
+class IngredientCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name_plural = "Ingredient categories"
+
+    def __str__(self):
+        return self.name
+
+
 class Ingredient(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    category = models.ForeignKey(IngredientCategory, on_delete=models.CASCADE)
     stock = models.DecimalField(max_digits=10, decimal_places=2)
     cost = models.DecimalField(max_digits=6, decimal_places=2)
     reorder_point = models.IntegerField()
