@@ -83,7 +83,7 @@ class Purchase(models.Model):
     quantity = models.IntegerField()
 
     class Meta:
-        unique_together = ["tab", "time"]
+        unique_together = ["tab", "drink", "time"]
         ordering = ["-time"]
 
     def __str__(self):
