@@ -24,8 +24,20 @@ class Customer(models.Model):
             return self.last_name
 
 
+class DrinkCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name_plural = "Drink categories"
+
+    def __str__(self):
+        return self.name
+
+
 class Drink(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    category = models.ForeignKey(DrinkCategory, on_delete=models.CASCADE)
     price = models.DecimalField(max_digits=7, decimal_places=2)
 
     class Meta:
@@ -76,7 +88,7 @@ class Recipe(models.Model):
 
 class Tab(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    opened = models.DateTimeField(default=timezone.now)
+    opened = models.DateTimeField(auto_now_add=True)
     due = models.DateTimeField(default=a_week_from_now)
     closed = models.DateTimeField(null=True, blank=True)
 
@@ -85,14 +97,14 @@ class Tab(models.Model):
         ordering = ["-closed", "customer__last_name"]
 
     def __str__(self):
-        return f"{self.customer.last_name}: {self.opened}"
+        return f"{self.customer.first_name} {self.customer.last_name}: {self.opened.strftime('%Y-%m-%d, %H:%M:%S')}"
 
 
 class Purchase(models.Model):
     tab = models.ForeignKey(Tab, on_delete=models.CASCADE)
     drink = models.ForeignKey(Drink, on_delete=models.CASCADE)
-    time = models.DateTimeField(default=timezone.now)
     quantity = models.IntegerField()
+    time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ["tab", "drink", "time"]
