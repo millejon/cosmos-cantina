@@ -10,8 +10,9 @@
   <body>
     <section id="content">
       <header>
+        <a href="{% url 'cantina:all_tabs' %}">Tabs</a><br>
         <a href="{% url 'cantina:all_customers' %}">Customers</a> - 
-        <a href="{% url 'cantina:add_customer' %}">Add Customer</a> - 
+        <a href="{% url 'cantina:add_customer' %}">Add Customer</a><br>
         {% block header %}{% endblock %}
       </header>
       {% block content %}{% endblock %}

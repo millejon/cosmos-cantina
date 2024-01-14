@@ -1,0 +1,30 @@
+{% extends "cantina/base.html" %}
+
+{% block title %}Tabs{% endblock %}
+
+{% block header %}
+  <h1>Tabs</h1>
+{% endblock %}
+
+{% block content %}
+<table>
+    <thead>
+      <th>ID</th>
+      <th>Customer</th>
+      <th>Opened</th>
+      <th>Due</th>
+      <th>Closed</th>
+    </thead>
+    <tbody>
+      {% for tab in tabs %}
+        <tr>
+          <td>{{ tab.id }}</td>
+          <td>{{ tab.customer.first_name }} {{ tab.customer.last_name }}</td>
+          <td>{{ tab.opened|date:"Y-m-d H:i" }}</td>
+          <td>{{ tab.due|date:"Y-m-d H:i" }}</td>
+          <td>{{ tab.closed|date:"Y-m-d H:i" }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

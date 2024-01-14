@@ -50,3 +50,9 @@ def delete_customer(request, customer_id):
     customer = get_object_or_404(models.Customer, pk=customer_id)
     customer.delete()
     return redirect("cantina:all_customers")
+
+
+def all_tabs(request):
+    tabs = models.Tab.objects.all()
+    context = {"tabs": tabs}
+    return render(request, "cantina/all_tabs.html", context)

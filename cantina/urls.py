@@ -15,4 +15,5 @@ urlpatterns = [
         views.delete_customer,
         name="delete_customer",
     ),
+    path("tabs/", views.all_tabs, name="all_tabs"),
 ]
