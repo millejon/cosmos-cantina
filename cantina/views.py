@@ -1,6 +1,6 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 
-from . import models
+from . import forms, models
 
 
 def all_customers(request):
@@ -14,3 +14,17 @@ def customer(request, customer_id):
     tabs = customer.tab_set.all()
     context = {"customer": customer, "tabs": tabs}
     return render(request, "cantina/customer.html", context)
+
+
+def add_customer(request):
+    if request.method == "POST":
+        form = forms.CustomerForm(data=request.POST)
+
+        if form.is_valid():
+            form.save()
+            return redirect("cantina:all_customers")
+    else:
+        form = forms.CustomerForm()
+
+    context = {"form": form}
+    return render(request, "cantina/add_customer.html", context)
