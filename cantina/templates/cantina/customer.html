@@ -13,6 +13,7 @@
       UBA: {{ customer.uba }}<br>
     {% endif %}
     <a href="{% url 'cantina:edit_customer' customer.id %}">Edit</a>
+    <a href="{% url 'cantina:delete_customer' customer.id %}">Delete</a>
   </p>
   {% if tabs %}
     <table>

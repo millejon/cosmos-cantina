@@ -44,3 +44,9 @@ def edit_customer(request, customer_id):
 
     context = {"customer": customer, "form": form}
     return render(request, "cantina/edit_customer.html", context)
+
+
+def delete_customer(request, customer_id):
+    customer = get_object_or_404(models.Customer, pk=customer_id)
+    customer.delete()
+    return redirect("cantina:all_customers")
