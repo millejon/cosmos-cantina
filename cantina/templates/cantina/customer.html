@@ -13,24 +13,25 @@
       UBA: {{ customer.uba }}<br>
     {% endif %}
     <a href="{% url 'cantina:edit_customer' customer.id %}">Edit</a>
-    <a href="{% url 'cantina:delete_customer' customer.id %}">Delete</a>
   </p>
-  <table>
-    <thead>
-      <th>ID</th>
-      <th>Opened</th>
-      <th>Due</th>
-      <th>Closed</th>
-    </thead>
-    <tbody>
-      {% for tab in tabs %}
-        <tr>
-          <td>{{ tab.id }}</td>
-          <td>{{ tab.opened|date:"Y-m-d H:i" }}</td>
-          <td>{{ tab.due|date:"Y-m-d H:i" }}</td>
-          <td>{{ tab.closed|date:"Y-m-d H:i" }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  {% if tabs %}
+    <table>
+      <thead>
+        <th>ID</th>
+        <th>Opened</th>
+        <th>Due</th>
+        <th>Closed</th>
+      </thead>
+      <tbody>
+        {% for tab in tabs %}
+          <tr>
+            <td>{{ tab.id }}</td>
+            <td>{{ tab.opened|date:"Y-m-d H:i" }}</td>
+            <td>{{ tab.due|date:"Y-m-d H:i" }}</td>
+            <td>{{ tab.closed|date:"Y-m-d H:i" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
 {% endblock %}

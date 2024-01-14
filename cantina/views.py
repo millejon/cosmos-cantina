@@ -28,3 +28,19 @@ def add_customer(request):
 
     context = {"form": form}
     return render(request, "cantina/add_customer.html", context)
+
+
+def edit_customer(request, customer_id):
+    customer = get_object_or_404(models.Customer, pk=customer_id)
+
+    if request.method == "POST":
+        form = forms.CustomerForm(instance=customer, data=request.POST)
+
+        if form.is_valid():
+            form.save()
+            return redirect("cantina:customer", customer_id=customer.id)
+    else:
+        form = forms.CustomerForm(instance=customer)
+
+    context = {"customer": customer, "form": form}
+    return render(request, "cantina/edit_customer.html", context)
