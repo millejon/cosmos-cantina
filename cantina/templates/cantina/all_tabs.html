@@ -21,7 +21,11 @@
       {% for tab in tabs %}
         <tr>
           <td>{{ tab.id }}</td>
-          <td>{{ tab.customer.first_name }} {{ tab.customer.last_name }}</td>
+          <td>
+            <a href="{% url 'cantina:tab' tab.id %}">
+              {{ tab.customer.first_name }} {{ tab.customer.last_name }}
+            </a>
+          </td>
           <td>{{ tab.opened|date:"Y-m-d H:i" }}</td>
           <td>{{ tab.due|date:"Y-m-d H:i" }}</td>
           <td>{{ tab.closed|date:"Y-m-d H:i" }}</td>

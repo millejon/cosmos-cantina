@@ -63,6 +63,13 @@ def all_tabs(request):
     return render(request, "cantina/all_tabs.html", context)
 
 
+def tab(request, tab_id):
+    tab = get_object_or_404(models.Tab, pk=tab_id)
+    purchases = tab.purchase_set.all()
+    context = {"tab": tab, "purchases": purchases}
+    return render(request, "cantina/tab.html", context)
+
+
 def edit_tab(request, tab_id):
     tab = get_object_or_404(models.Tab, pk=tab_id)
 
