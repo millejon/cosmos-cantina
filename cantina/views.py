@@ -131,6 +131,12 @@ def edit_purchase(request, purchase_id):
     return render(request, "cantina/edit_purchase.html", context)
 
 
+def delete_purchase(request, purchase_id):
+    purchase = get_object_or_404(models.Purchase, pk=purchase_id)
+    purchase.delete()
+    return redirect("cantina:all_purchases")
+
+
 ########################################################################
 #                                                                      #
 #                           HELPER FUNCTIONS                           #
