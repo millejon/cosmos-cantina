@@ -79,6 +79,12 @@ def edit_tab(request, tab_id):
     return render(request, "cantina/edit_tab.html", context)
 
 
+def delete_tab(request, tab_id):
+    tab = get_object_or_404(models.Tab, pk=tab_id)
+    tab.delete()
+    return redirect("cantina:all_tabs")
+
+
 def add_purchase(request):
     if request.method == "POST":
         form = forms.PurchaseForm(data=request.POST)
