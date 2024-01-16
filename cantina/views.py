@@ -56,3 +56,37 @@ def all_tabs(request):
     tabs = models.Tab.objects.all()
     context = {"tabs": tabs}
     return render(request, "cantina/all_tabs.html", context)
+
+
+def add_purchase(request):
+    if request.method == "POST":
+        form = forms.PurchaseForm(data=request.POST)
+
+        if form.is_valid():
+            purchase = models.Purchase(
+                tab=get_tab(request.POST["customer"]),
+                drink=models.Drink.objects.get(pk=request.POST["drink"]),
+                quantity=request.POST["quantity"],
+            )
+            purchase.save()
+            return redirect("cantina:add_purchase")
+    else:
+        form = forms.PurchaseForm()
+
+    context = {"form": form}
+    return render(request, "cantina/add_purchase.html", context)
+
+
+def get_tab(customer: str) -> models.Tab:
+    """
+    Return customer's open tab or, if the customer does not currently
+    have an open tab, create one and return.
+    """
+    customer = models.Customer.objects.get(pk=customer)
+    try:
+        tab = customer.tab_set.get(closed__isnull=True)
+    except models.Tab.DoesNotExist:
+        tab = models.Tab(customer=customer)
+        tab.save()
+
+    return tab

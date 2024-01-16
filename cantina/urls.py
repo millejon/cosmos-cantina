@@ -16,4 +16,5 @@ urlpatterns = [
         name="delete_customer",
     ),
     path("tabs/", views.all_tabs, name="all_tabs"),
+    path("purchases/add", views.add_purchase, name="add_purchase"),
 ]
