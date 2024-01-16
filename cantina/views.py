@@ -3,6 +3,11 @@ from django.shortcuts import get_object_or_404, render, redirect
 from . import forms, models
 
 
+########################################################################
+#                                                                      #
+#                                VIEWS                                 #
+#                                                                      #
+########################################################################
 def all_customers(request):
     customers = models.Customer.objects.all()
     context = {"customers": customers}
@@ -77,6 +82,17 @@ def add_purchase(request):
     return render(request, "cantina/add_purchase.html", context)
 
 
+def all_purchases(request):
+    purchases = models.Purchase.objects.all()
+    context = {"purchases": purchases}
+    return render(request, "cantina/all_purchases.html", context)
+
+
+########################################################################
+#                                                                      #
+#                           HELPER FUNCTIONS                           #
+#                                                                      #
+########################################################################
 def get_tab(customer: str) -> models.Tab:
     """
     Return customer's open tab or, if the customer does not currently

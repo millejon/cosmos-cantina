@@ -10,10 +10,11 @@
   <body>
     <section id="content">
       <header>
-        <a href="{% url 'cantina:all_tabs' %}">Tabs</a><br>
-        <a href="{% url 'cantina:add_purchase' %}">Add Purchase</a><br>
-        <a href="{% url 'cantina:all_customers' %}">Customers</a> - 
+        <a href="{% url 'cantina:all_tabs' %}">Tabs</a> -
+        <a href="{% url 'cantina:add_purchase' %}">Place Order</a><br>
+        <a href="{% url 'cantina:all_customers' %}">Customers</a> -
         <a href="{% url 'cantina:add_customer' %}">Add Customer</a><br>
+        <a href="{% url 'cantina:all_purchases' %}">Transactions</a><br>
         {% block header %}{% endblock %}
       </header>
       {% block content %}{% endblock %}

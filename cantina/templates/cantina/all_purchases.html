@@ -1,0 +1,30 @@
+{% extends "cantina/base.html" %}
+
+{% block title %}Transactions{% endblock %}
+
+{% block header %}
+  <h1>Transactions</h1>
+{% endblock %}
+
+{% block content %}
+<table>
+    <thead>
+      <th>ID</th>
+      <th>Customer</th>
+      <th>Drink</th>
+      <th>Quantity</th>
+      <th>Time</th>
+    </thead>
+    <tbody>
+      {% for purchase in purchases %}
+        <tr>
+          <td>{{ purchase.id }}</td>
+          <td>{{ purchase.tab.customer.first_name }} {{ purchase.tab.customer.last_name }}</td>
+          <td>{{ purchase.drink.name }}</td>
+          <td>{{ purchase.quantity }}</td>
+          <td>{{ purchase.time|date:"Y-m-d H:i" }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
