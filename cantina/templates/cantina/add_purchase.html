@@ -1,15 +1,15 @@
 {% extends "cantina/base.html" %}
 
-{% block title %}Add Purchase{% endblock %}
+{% block title %}Place Order{% endblock %}
 
 {% block header %}
-  <h1>Add Purchase</h1>
+  <h1>Place Order</h1>
 {% endblock %}
 
 {% block content %}
   <form action="{% url 'cantina:add_purchase' %}" method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <button name="submit">Add Purchase</button>
+    <button name="submit">Submit order</button>
   </form>
 {% endblock %}
