@@ -19,3 +19,13 @@ class PurchaseForm(forms.ModelForm):
     class Meta:
         model = models.Purchase
         fields = ["customer", "drink", "quantity"]
+
+
+class TabForm(forms.ModelForm):
+    class Meta:
+        model = models.Tab
+        fields = ["customer", "due", "closed"]
+        widgets = {
+            "due": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "closed": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+        }

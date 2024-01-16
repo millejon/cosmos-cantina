@@ -63,6 +63,22 @@ def all_tabs(request):
     return render(request, "cantina/all_tabs.html", context)
 
 
+def edit_tab(request, tab_id):
+    tab = get_object_or_404(models.Tab, pk=tab_id)
+
+    if request.method == "POST":
+        form = forms.TabForm(instance=tab, data=request.POST)
+
+        if form.is_valid():
+            form.save()
+            return redirect("cantina:all_tabs")  # Change this back to tab detail view
+    else:
+        form = forms.TabForm(instance=tab)
+
+    context = {"tab": tab, "form": form}
+    return render(request, "cantina/edit_tab.html", context)
+
+
 def add_purchase(request):
     if request.method == "POST":
         form = forms.PurchaseForm(data=request.POST)
