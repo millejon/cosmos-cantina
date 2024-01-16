@@ -1,0 +1,15 @@
+{% extends "cantina/base.html" %}
+
+{% block title %}Edit Purchase{% endblock %}
+
+{% block header %}
+  <h1>Edit Purchase: {{ purchase.tab.customer.first_name }} {{ purchase.tab.customer.last_name }}</h1>
+{% endblock %}
+
+{% block content %}
+  <form action="{% url 'cantina:edit_purchase' purchase.id %}" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button name="submit">Save changes</button>
+  </form>
+{% endblock %}

@@ -85,16 +85,19 @@ def delete_tab(request, tab_id):
     return redirect("cantina:all_tabs")
 
 
+def all_purchases(request):
+    purchases = models.Purchase.objects.all()
+    context = {"purchases": purchases}
+    return render(request, "cantina/all_purchases.html", context)
+
+
 def add_purchase(request):
     if request.method == "POST":
         form = forms.PurchaseForm(data=request.POST)
 
         if form.is_valid():
-            purchase = models.Purchase(
-                tab=get_tab(request.POST["customer"]),
-                drink=models.Drink.objects.get(pk=request.POST["drink"]),
-                quantity=request.POST["quantity"],
-            )
+            purchase = form.save(commit=False)
+            purchase.tab = get_tab(request.POST["customer"])
             purchase.save()
             return redirect("cantina:add_purchase")
     else:
@@ -104,10 +107,28 @@ def add_purchase(request):
     return render(request, "cantina/add_purchase.html", context)
 
 
-def all_purchases(request):
-    purchases = models.Purchase.objects.all()
-    context = {"purchases": purchases}
-    return render(request, "cantina/all_purchases.html", context)
+def edit_purchase(request, purchase_id):
+    purchase = get_object_or_404(models.Purchase, pk=purchase_id)
+
+    if request.method == "POST":
+        form = forms.PurchaseForm(instance=purchase, data=request.POST)
+
+        if form.is_valid():
+            purchase = form.save(commit=False)
+            purchase.tab = get_tab(request.POST["customer"])
+            purchase.save()
+            return redirect(
+                "cantina:all_purchases"
+            )  # Change this back to purchase detail view
+    else:
+        customer = (
+            purchase.tab.customer.id,
+            f"{purchase.tab.customer.first_name} {purchase.tab.customer.last_name}",
+        )
+        form = forms.PurchaseForm(initial={"customer": customer}, instance=purchase)
+
+    context = {"purchase": purchase, "form": form}
+    return render(request, "cantina/edit_purchase.html", context)
 
 
 ########################################################################

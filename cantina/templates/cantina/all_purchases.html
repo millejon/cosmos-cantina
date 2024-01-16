@@ -14,6 +14,7 @@
       <th>Drink</th>
       <th>Quantity</th>
       <th>Time</th>
+      <th>Edit</th>
     </thead>
     <tbody>
       {% for purchase in purchases %}
@@ -23,6 +24,9 @@
           <td>{{ purchase.drink.name }}</td>
           <td>{{ purchase.quantity }}</td>
           <td>{{ purchase.time|date:"Y-m-d H:i" }}</td>
+          <td>
+            <a href="{% url 'cantina:edit_purchase' purchase.id %}">Edit</a>
+          </td>
         </tr>
       {% endfor %}
     </tbody>
