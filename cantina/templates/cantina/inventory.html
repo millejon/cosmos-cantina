@@ -1,0 +1,32 @@
+{% extends "cantina/base.html" %}
+
+{% block title %}Inventory{% endblock %}
+
+{% block header %}
+  <h1>Inventory</h1>
+{% endblock %}
+
+{% block content %}
+<table>
+    <thead>
+      <th>Category</th>
+      <th>Name</th>
+      <th>Stock</th>
+      <th>Cost</th>
+      <th>Reorder Point</th>
+      <th>Reorder Amount</th>
+    </thead>
+    <tbody>
+      {% for ingredient in inventory %}
+        <tr>
+          <td>{{ ingredient.category }}</td>
+          <td>{{ ingredient.name }}</td>
+          <td>{{ ingredient.stock }}</td>
+          <td>{{ ingredient.cost }}</td>
+          <td>{{ ingredient.reorder_point }}</td>
+          <td>{{ ingredient.reorder_amount }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

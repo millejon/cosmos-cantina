@@ -30,4 +30,5 @@ urlpatterns = [
     ),
     path("menu/", views.menu, name="menu"),
     path("menu/<int:category_id>/", views.menu_category, name="menu_category"),
+    path("inventory/", views.inventory, name="inventory"),
 ]

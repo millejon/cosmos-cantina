@@ -150,6 +150,12 @@ def menu_category(request, category_id):
     return render(request, "cantina/menu_category.html", context)
 
 
+def inventory(request):
+    inventory = models.Ingredient.objects.all()
+    context = {"inventory": inventory}
+    return render(request, "cantina/inventory.html", context)
+
+
 ########################################################################
 #                                                                      #
 #                           HELPER FUNCTIONS                           #
