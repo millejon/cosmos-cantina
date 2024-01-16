@@ -28,4 +28,6 @@ urlpatterns = [
         views.delete_purchase,
         name="delete_purchase",
     ),
+    path("menu/", views.menu, name="menu"),
+    path("menu/<int:category_id>/", views.menu_category, name="menu_category"),
 ]

@@ -1,0 +1,24 @@
+{% extends "cantina/base.html" %}
+
+{% block title %}{{ category.name }}{% endblock %}
+
+{% block header %}
+  <h1>{{ category.name }}</h1>
+{% endblock %}
+
+{% block content %}
+<table>
+    <thead>
+      <th>Name</th>
+      <th>Price</th>
+    </thead>
+    <tbody>
+      {% for drink in drinks %}
+        <tr>
+          <td>{{ drink.name }}</td>
+          <td>{{ drink.price }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

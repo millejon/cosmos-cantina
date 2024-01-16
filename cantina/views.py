@@ -137,6 +137,19 @@ def delete_purchase(request, purchase_id):
     return redirect("cantina:all_purchases")
 
 
+def menu(request):
+    categories = models.DrinkCategory.objects.all()
+    context = {"categories": categories}
+    return render(request, "cantina/menu.html", context)
+
+
+def menu_category(request, category_id):
+    category = get_object_or_404(models.DrinkCategory, pk=category_id)
+    drinks = models.Drink.objects.filter(category=category)
+    context = {"category": category, "drinks": drinks}
+    return render(request, "cantina/menu_category.html", context)
+
+
 ########################################################################
 #                                                                      #
 #                           HELPER FUNCTIONS                           #

@@ -1,0 +1,21 @@
+{% extends "cantina/base.html" %}
+
+{% block title %}Menu{% endblock %}
+
+{% block header %}
+  <h1>Menu</h1>
+{% endblock %}
+
+{% block content %}
+  <table>
+    <tbody>
+      {% for category in categories %}
+        <tr>
+          <td>
+            <a href="{% url 'cantina:menu_category' category.id %}">{{ category.name }}</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
