@@ -3,7 +3,7 @@
 {% block title %}{{ category.name }}{% endblock %}
 
 {% block header %}
-  <h1>{{ category.name }}</h1>
+  <h1>Menu: {{ category.name }}</h1>
 {% endblock %}
 
 {% block content %}
@@ -11,12 +11,18 @@
     <thead>
       <th>Name</th>
       <th>Price</th>
+      <th>Order</th>
     </thead>
     <tbody>
-      {% for drink in drinks %}
+      {% for item in items %}
         <tr>
-          <td>{{ drink.name }}</td>
-          <td>{{ drink.price }}</td>
+          <td>
+            <a href="{% url 'cantina:menu_detail' item.id %}">{{ item.name }}</a>
+          </td>
+          <td>{{ item.price }}</td>
+          <td>
+            <a href="{% url 'cantina:add_purchase' item.id %}">Order</a>
+          </td>
         </tr>
       {% endfor %}
     </tbody>

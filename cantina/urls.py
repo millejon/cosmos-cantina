@@ -19,6 +19,7 @@ urlpatterns = [
     path(
         "menu/categories/<int:category_id>/", views.menu_category, name="menu_category"
     ),
+    path("menu/drinks/<int:drink_id>/", views.menu_detail, name="menu_detail"),
     path("menu/drinks/<int:drink_id>/add/", views.add_purchase, name="add_purchase"),
     path("menu/drinks/<int:drink_id>/edit/", views.edit_menu, name="edit_menu"),
     path("tabs/", views.all_tabs, name="all_tabs"),

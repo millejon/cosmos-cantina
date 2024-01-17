@@ -69,6 +69,13 @@ def menu_category(request, category_id):
     return render(request, "cantina/menu_category.html", context)
 
 
+def menu_detail(request, drink_id):
+    drink = get_object_or_404(models.Drink, pk=drink_id)
+    recipe = models.Recipe.objects.filter(drink=drink)
+    context = {"drink": drink, "recipe": recipe}
+    return render(request, "cantina/drink.html", context)
+
+
 def add_purchase(request, drink_id):
     drink = get_object_or_404(models.Drink, pk=drink_id)
 
