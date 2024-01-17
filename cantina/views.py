@@ -126,6 +126,13 @@ def edit_menu(request, drink_id):
     return render(request, "cantina/edit_menu.html", context)
 
 
+def delete_menu_item(request, item_id):
+    item = get_object_or_404(models.Drink, pk=item_id)
+    category = item.category.id
+    item.delete()
+    return redirect("cantina:menu_category", category_id=category)
+
+
 def edit_recipe(request, recipe_id):
     recipe = get_object_or_404(models.Recipe, pk=recipe_id)
 
