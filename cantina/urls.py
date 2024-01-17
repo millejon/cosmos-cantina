@@ -22,6 +22,7 @@ urlpatterns = [
     path("menu/drinks/<int:drink_id>/", views.menu_detail, name="menu_detail"),
     path("menu/drinks/<int:drink_id>/add/", views.add_purchase, name="add_purchase"),
     path("menu/drinks/<int:drink_id>/edit/", views.edit_menu, name="edit_menu"),
+    path("menu/recipes/<int:recipe_id>/edit/", views.edit_recipe, name="edit_recipe"),
     path("tabs/", views.all_tabs, name="all_tabs"),
     path("tabs/<int:tab_id>/", views.tab, name="tab"),
     path("tabs/<int:tab_id>/edit/", views.edit_tab, name="edit_tab"),

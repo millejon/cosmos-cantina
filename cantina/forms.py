@@ -27,6 +27,12 @@ class DrinkForm(forms.ModelForm):
         fields = ["name", "price", "category"]
 
 
+class RecipeForm(forms.ModelForm):
+    class Meta:
+        model = models.Recipe
+        fields = ["ingredient", "amount"]
+
+
 class TabForm(forms.ModelForm):
     class Meta:
         model = models.Tab

@@ -1,0 +1,16 @@
+{% extends "cantina/base.html" %}
+
+{% block title %}Edit Recipe{% endblock %}
+
+{% block header %}
+  <h1>Editing: {{ recipe.drink.name }} - {{ recipe.ingredient.name }} [Recipe]</h1>
+{% endblock %}
+
+{% block content %}
+  <form action="{% url 'cantina:edit_recipe' recipe.id %}" method="post">
+    {% csrf_token %}
+    Drink: {{ form.instance.drink.name }}
+    {{ form.as_p }}
+    <button name="submit">Save changes</button>
+  </form>
+{% endblock %}

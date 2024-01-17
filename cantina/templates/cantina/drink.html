@@ -24,6 +24,9 @@
         <tr>
           <td>{{ component.ingredient.name }}</td>
           <td>{{ component.amount }} oz.</td>
+          <td>
+            <a href="{% url 'cantina:edit_recipe' component.id %}">Edit</a>
+          </td>
         </tr>
       {% endfor %}
     </tbody>

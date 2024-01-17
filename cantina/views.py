@@ -111,6 +111,22 @@ def edit_menu(request, drink_id):
     return render(request, "cantina/edit_menu.html", context)
 
 
+def edit_recipe(request, recipe_id):
+    recipe = get_object_or_404(models.Recipe, pk=recipe_id)
+
+    if request.method == "POST":
+        form = forms.RecipeForm(instance=recipe, data=request.POST)
+
+        if form.is_valid():
+            form.save()
+            return redirect("cantina:menu_detail", drink_id=recipe.drink.id)
+    else:
+        form = forms.RecipeForm(instance=recipe)
+
+    context = {"recipe": recipe, "form": form}
+    return render(request, "cantina/edit_recipe.html", context)
+
+
 def all_tabs(request):
     tabs = models.Tab.objects.all()
     context = {"tabs": tabs}
