@@ -77,9 +77,7 @@ class Ingredient(models.Model):
 class Recipe(models.Model):
     drink = models.ForeignKey(Drink, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
-    amount = models.DecimalField(
-        max_digits=4, decimal_places=2, help_text="Decimal fraction of bottle."
-    )
+    amount = models.DecimalField(max_digits=4, decimal_places=2, help_text="ounces")
 
     class Meta:
         unique_together = ["drink", "ingredient"]
