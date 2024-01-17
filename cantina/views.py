@@ -14,10 +14,9 @@ def all_customers(request):
     return render(request, "cantina/all_customers.html", context)
 
 
-def customer(request, customer_id):
+def customer_detail(request, customer_id):
     customer = get_object_or_404(models.Customer, pk=customer_id)
-    tabs = customer.tab_set.all()
-    context = {"customer": customer, "tabs": tabs}
+    context = {"customer": customer}
     return render(request, "cantina/customer.html", context)
 
 
@@ -43,7 +42,7 @@ def edit_customer(request, customer_id):
 
         if form.is_valid():
             form.save()
-            return redirect("cantina:customer", customer_id=customer.id)
+            return redirect("cantina:customer_detail", customer_id=customer.id)
     else:
         form = forms.CustomerForm(instance=customer)
 
@@ -55,6 +54,54 @@ def delete_customer(request, customer_id):
     customer = get_object_or_404(models.Customer, pk=customer_id)
     customer.delete()
     return redirect("cantina:all_customers")
+
+
+def menu(request):
+    categories = models.DrinkCategory.objects.all()
+    context = {"categories": categories}
+    return render(request, "cantina/menu.html", context)
+
+
+def menu_category(request, category_id):
+    category = get_object_or_404(models.DrinkCategory, pk=category_id)
+    items = models.Drink.objects.filter(category=category)
+    context = {"category": category, "items": items}
+    return render(request, "cantina/menu_category.html", context)
+
+
+def add_purchase(request, drink_id):
+    drink = get_object_or_404(models.Drink, pk=drink_id)
+
+    if request.method == "POST":
+        form = forms.PurchaseForm(data=request.POST)
+
+        if form.is_valid():
+            purchase = form.save(commit=False)
+            purchase.tab = get_tab(request.POST["customer"])
+            purchase.save()
+            return redirect("cantina:menu_category", category_id=drink.category.id)
+    else:
+        form = forms.PurchaseForm(initial={"drink": drink})
+
+    context = {"drink": drink, "form": form}
+    return render(request, "cantina/add_purchase.html", context)
+
+
+def edit_menu(request, drink_id):
+    drink = get_object_or_404(models.Drink, pk=drink_id)
+    recipe = models.Recipe.objects.filter(drink=drink)
+
+    if request.method == "POST":
+        form = forms.DrinkForm(instance=drink, data=request.POST)
+
+        if form.is_valid():
+            form.save()
+            return redirect("cantina:menu_category", category_id=drink.category.id)
+    else:
+        form = forms.DrinkForm(instance=drink)
+
+    context = {"drink": drink, "recipe": recipe, "form": form}
+    return render(request, "cantina/edit_menu.html", context)
 
 
 def all_tabs(request):
@@ -98,22 +145,6 @@ def all_purchases(request):
     return render(request, "cantina/all_purchases.html", context)
 
 
-def add_purchase(request):
-    if request.method == "POST":
-        form = forms.PurchaseForm(data=request.POST)
-
-        if form.is_valid():
-            purchase = form.save(commit=False)
-            purchase.tab = get_tab(request.POST["customer"])
-            purchase.save()
-            return redirect("cantina:add_purchase")
-    else:
-        form = forms.PurchaseForm()
-
-    context = {"form": form}
-    return render(request, "cantina/add_purchase.html", context)
-
-
 def edit_purchase(request, purchase_id):
     purchase = get_object_or_404(models.Purchase, pk=purchase_id)
 
@@ -142,19 +173,6 @@ def delete_purchase(request, purchase_id):
     purchase = get_object_or_404(models.Purchase, pk=purchase_id)
     purchase.delete()
     return redirect("cantina:all_purchases")
-
-
-def menu(request):
-    categories = models.DrinkCategory.objects.all()
-    context = {"categories": categories}
-    return render(request, "cantina/menu.html", context)
-
-
-def menu_category(request, category_id):
-    category = get_object_or_404(models.DrinkCategory, pk=category_id)
-    drinks = models.Drink.objects.filter(category=category)
-    context = {"category": category, "drinks": drinks}
-    return render(request, "cantina/menu_category.html", context)
 
 
 def inventory(request):

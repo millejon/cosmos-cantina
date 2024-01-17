@@ -18,7 +18,13 @@ class PurchaseForm(forms.ModelForm):
 
     class Meta:
         model = models.Purchase
-        fields = ["customer", "drink", "quantity"]
+        fields = ["drink", "customer", "quantity"]
+
+
+class DrinkForm(forms.ModelForm):
+    class Meta:
+        model = models.Drink
+        fields = ["name", "price", "category"]
 
 
 class TabForm(forms.ModelForm):
