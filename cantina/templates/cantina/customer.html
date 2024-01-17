@@ -15,21 +15,26 @@
     <a href="{% url 'cantina:edit_customer' customer.id %}">Edit</a>
     <a href="{% url 'cantina:delete_customer' customer.id %}">Delete</a>
   </p>
-  {% if tabs %}
+  {% if customer.tab_set.all %}
+    <h2>Purchase History:</h2>
     <table>
       <thead>
-        <th>ID</th>
+        <th>Tab #</th>
         <th>Opened</th>
-        <th>Due</th>
         <th>Closed</th>
+        <th>Due</th>
       </thead>
       <tbody>
-        {% for tab in tabs %}
+        {% for tab in customer.tab_set.all %}
           <tr>
-            <td>{{ tab.id }}</td>
+            <td>
+              <a href="{% url 'cantina:tab' tab.id %}">{{ tab.id }}</a>
+            </td>
             <td>{{ tab.opened|date:"Y-m-d H:i" }}</td>
-            <td>{{ tab.due|date:"Y-m-d H:i" }}</td>
             <td>{{ tab.closed|date:"Y-m-d H:i" }}</td>
+            {% if not tab.closed %}
+              <td>{{ tab.due|date:"Y-m-d H:i" }}</td>
+            {% endif %}
           </tr>
         {% endfor %}
       </tbody>

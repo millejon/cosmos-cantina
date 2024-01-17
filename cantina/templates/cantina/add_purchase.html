@@ -7,9 +7,9 @@
 {% endblock %}
 
 {% block content %}
-  <form action="{% url 'cantina:add_purchase' %}" method="post">
+  <form action="{% url 'cantina:add_purchase' drink.id %}" method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <button name="submit">Submit order</button>
+    <button name="submit">Submit</button>
   </form>
 {% endblock %}
