@@ -94,6 +94,21 @@ def add_purchase(request, drink_id):
     return render(request, "cantina/add_purchase.html", context)
 
 
+def add_menu_item(request):
+    if request.method == "POST":
+        form = forms.DrinkForm(data=request.POST)
+        category = int(request.POST["category"])
+
+        if form.is_valid():
+            form.save()
+            return redirect("cantina:menu_category", category_id=category)
+    else:
+        form = forms.DrinkForm()
+
+    context = {"form": form}
+    return render(request, "cantina/add_menu_item.html", context)
+
+
 def edit_menu(request, drink_id):
     drink = get_object_or_404(models.Drink, pk=drink_id)
     recipe = models.Recipe.objects.filter(drink=drink)

@@ -16,6 +16,7 @@ urlpatterns = [
         name="delete_customer",
     ),
     path("menu/", views.menu, name="menu"),
+    path("menu/add/", views.add_menu_item, name="add_menu_item"),
     path(
         "menu/categories/<int:category_id>/", views.menu_category, name="menu_category"
     ),
