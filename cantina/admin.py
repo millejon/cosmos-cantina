@@ -4,10 +4,10 @@ from . import models
 
 
 class ComponentAdmin(admin.ModelAdmin):
-    fields = ["drink", "ingredient", "amount"]
+    fields = ["item", "ingredient", "amount"]
 
     def get_readonly_fields(self, request, object=None):
-        return ["drink"] if object else []
+        return ["item"] if object else []
 
 
 admin.site.register(models.Customer)
