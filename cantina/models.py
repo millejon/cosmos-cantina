@@ -25,20 +25,20 @@ class Customer(models.Model):
         return f"{self.first_name} {self.last_name}"
 
 
-class DrinkCategory(models.Model):
+class MenuItemCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     class Meta:
         ordering = ["name"]
-        verbose_name_plural = "Drink categories"
+        verbose_name_plural = "Menu categories"
 
     def __str__(self):
         return self.name
 
 
-class Drink(models.Model):
+class MenuItem(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    category = models.ForeignKey(DrinkCategory, on_delete=models.CASCADE)
+    category = models.ForeignKey(MenuItemCategory, on_delete=models.CASCADE)
     price = models.DecimalField(max_digits=7, decimal_places=2)
 
     class Meta:
@@ -48,7 +48,7 @@ class Drink(models.Model):
         return self.name
 
 
-class IngredientCategory(models.Model):
+class InventoryItemCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     class Meta:
@@ -59,9 +59,9 @@ class IngredientCategory(models.Model):
         return self.name
 
 
-class Ingredient(models.Model):
+class InventoryItem(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    category = models.ForeignKey(IngredientCategory, on_delete=models.CASCADE)
+    category = models.ForeignKey(InventoryItemCategory, on_delete=models.CASCADE)
     stock = models.DecimalField(max_digits=10, decimal_places=2, help_text="bottles")
     cost = models.DecimalField(max_digits=6, decimal_places=2, help_text="per bottle")
     reorder_point = models.IntegerField(help_text="bottles")
@@ -74,17 +74,17 @@ class Ingredient(models.Model):
         return self.name
 
 
-class Recipe(models.Model):
-    drink = models.ForeignKey(Drink, on_delete=models.CASCADE)
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+class Component(models.Model):
+    item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
+    ingredient = models.ForeignKey(InventoryItem, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=4, decimal_places=2, help_text="ounces")
 
     class Meta:
-        unique_together = ["drink", "ingredient"]
-        ordering = ["drink", "ingredient__name"]
+        unique_together = ["item", "ingredient"]
+        ordering = ["item", "ingredient__name"]
 
     def __str__(self):
-        return f"{self.drink.name} - {self.ingredient.name}"
+        return f"{self.item.name} - {self.ingredient.name}"
 
 
 class Tab(models.Model):
@@ -105,7 +105,7 @@ class Tab(models.Model):
 
 class Purchase(models.Model):
     tab = models.ForeignKey(Tab, on_delete=models.CASCADE)
-    drink = models.ForeignKey(Drink, on_delete=models.CASCADE)
+    item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     time = models.DateTimeField(auto_now_add=True)
 
@@ -113,4 +113,4 @@ class Purchase(models.Model):
         ordering = ["-time"]
 
     def __str__(self):
-        return f"{self.tab.customer.last_name}: {self.drink.name} x {self.quantity}"
+        return f"{self.tab.customer.last_name}: {self.item.name} x {self.quantity}"
