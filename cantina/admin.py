@@ -3,7 +3,7 @@ from django.contrib import admin
 from . import models
 
 
-class RecipeAdmin(admin.ModelAdmin):
+class ComponentAdmin(admin.ModelAdmin):
     fields = ["drink", "ingredient", "amount"]
 
     def get_readonly_fields(self, request, object=None):
@@ -11,10 +11,10 @@ class RecipeAdmin(admin.ModelAdmin):
 
 
 admin.site.register(models.Customer)
-admin.site.register(models.DrinkCategory)
-admin.site.register(models.Drink)
-admin.site.register(models.IngredientCategory)
-admin.site.register(models.Ingredient)
-admin.site.register(models.Recipe, RecipeAdmin)
+admin.site.register(models.MenuItemCategory)
+admin.site.register(models.MenuItem)
+admin.site.register(models.InventoryItemCategory)
+admin.site.register(models.InventoryItem)
+admin.site.register(models.Component, ComponentAdmin)
 admin.site.register(models.Tab)
 admin.site.register(models.Purchase)
