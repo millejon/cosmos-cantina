@@ -6,7 +6,32 @@ from . import models
 class CustomerForm(forms.ModelForm):
     class Meta:
         model = models.Customer
-        fields = ["first_name", "last_name", "planet", "uba"]
+        fields = ["last_name", "first_name", "planet", "uba"]
+
+
+class MenuItemForm(forms.ModelForm):
+    class Meta:
+        model = models.MenuItem
+        fields = ["category", "name", "price"]
+
+
+class InventoryItemForm(forms.ModelForm):
+    class Meta:
+        model = models.InventoryItem
+        fields = [
+            "category",
+            "name",
+            "cost",
+            "stock",
+            "reorder_point",
+            "reorder_amount",
+        ]
+
+
+class ComponentForm(forms.ModelForm):
+    class Meta:
+        model = models.Component
+        fields = ["ingredient", "amount"]
 
 
 class PurchaseForm(forms.ModelForm):
@@ -19,18 +44,6 @@ class PurchaseForm(forms.ModelForm):
     class Meta:
         model = models.Purchase
         fields = ["drink", "customer", "quantity"]
-
-
-class DrinkForm(forms.ModelForm):
-    class Meta:
-        model = models.Drink
-        fields = ["name", "price", "category"]
-
-
-class RecipeForm(forms.ModelForm):
-    class Meta:
-        model = models.Recipe
-        fields = ["ingredient", "amount"]
 
 
 class TabForm(forms.ModelForm):
