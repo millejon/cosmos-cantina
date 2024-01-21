@@ -53,7 +53,7 @@ class InventoryItemCategory(models.Model):
 
     class Meta:
         ordering = ["name"]
-        verbose_name_plural = "Ingredient categories"
+        verbose_name_plural = "Inventory categories"
 
     def __str__(self):
         return self.name
