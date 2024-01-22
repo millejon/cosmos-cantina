@@ -24,6 +24,10 @@ class Customer(models.Model):
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
 
 class MenuItemCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -108,12 +112,10 @@ class Purchase(models.Model):
     item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     time = models.DateTimeField(auto_now_add=True)
+    amount = models.DecimalField(max_digits=40, decimal_places=2, default=0)
 
     class Meta:
         ordering = ["-time"]
 
     def __str__(self):
         return f"{self.tab.customer.last_name}: {self.item.name} x {self.quantity}"
-
-    def get_amount(self):
-        return self.item.price * self.quantity
