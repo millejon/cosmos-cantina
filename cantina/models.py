@@ -119,3 +119,7 @@ class Purchase(models.Model):
 
     def __str__(self):
         return f"{self.tab.customer.last_name}: {self.item.name} x {self.quantity}"
+
+    def update_amount(self):
+        self.amount = self.item.price * self.quantity
+        self.save()
