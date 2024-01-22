@@ -25,7 +25,7 @@ class Customer(models.Model):
         return f"{self.first_name} {self.last_name}"
 
     @property
-    def full_name(self):
+    def name(self):
         return f"{self.first_name} {self.last_name}"
 
 
@@ -122,4 +122,8 @@ class Purchase(models.Model):
 
     def update_amount(self):
         self.amount = self.item.price * self.quantity
+        self.save()
+
+    def comp(self):
+        self.amount = 0
         self.save()
