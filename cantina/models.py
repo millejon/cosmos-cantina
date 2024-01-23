@@ -106,6 +106,9 @@ class Tab(models.Model):
         else:
             return f"{self.customer.first_name} {self.customer.last_name} [{self.closed.strftime('%Y-%m-%d %H:%M')}]"
 
+    def get_purchases(self):
+        return self.purchase_set.all().order_by("time")
+
 
 class Purchase(models.Model):
     tab = models.ForeignKey(Tab, on_delete=models.CASCADE)
