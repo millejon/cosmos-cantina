@@ -109,6 +109,9 @@ class Tab(models.Model):
     def get_purchases(self):
         return self.purchase_set.all().order_by("time")
 
+    def get_amount(self):
+        return self.purchase_set.aggregate(models.Sum("amount"))["amount__sum"]
+
 
 class Purchase(models.Model):
     tab = models.ForeignKey(Tab, on_delete=models.CASCADE)
