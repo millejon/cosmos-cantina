@@ -77,7 +77,7 @@ class TabTestCase(TestCase):
 
     def test_tab_get_amount_with_single_purchase(self):
         """
-        The get_amount methods of the Tab model should return the total
+        The get_amount method of the Tab model should return the total
         price of all purchases assigned to the tab.
         """
         self.make_purchase()
@@ -86,7 +86,7 @@ class TabTestCase(TestCase):
 
     def test_tab_get_amount_with_multiple_purchase(self):
         """
-        The get_amount methods of the Tab model should return the total
+        The get_amount method of the Tab model should return the total
         price of all purchases assigned to the tab.
         """
         for _ in range(5):
@@ -96,8 +96,56 @@ class TabTestCase(TestCase):
 
     def test_tab_get_amount_with_no_purchase(self):
         """
-        The get_amount methods of the Tab model should return the total
+        The get_amount method of the Tab model should return the total
         price of all purchases assigned to the tab. A tab with no
         purchases should return 0.
         """
         self.assertEqual(self.tab.get_amount(), 0)
+
+
+class PurchaseTestCase(TestCase):
+    def setUp(self):
+        customer = models.Customer.objects.create(last_name="Thanos", planet="Titan")
+        tab = models.Tab.objects.create(customer=customer)
+        category = models.MenuItemCategory.objects.create(name="Beer")
+        self.item = models.MenuItem.objects.create(
+            name="Duff Beer", category=category, price=5
+        )
+        self.purchase = models.Purchase.objects.create(
+            tab=tab, item=self.item, quantity=2, amount=10
+        )
+
+    def test_purchase_update_amount_with_change_to_quantity(self):
+        """
+        The update_amount method of the Purchase model should update
+        the amount of the purchase according to changes in quantity.
+        """
+        self.assertEqual(self.purchase.amount, 10)
+
+        self.purchase.quantity = 4  # Original quantity was 2.
+        self.purchase.update_amount()
+
+        self.assertEqual(self.purchase.amount, 20)
+
+    def test_purchase_update_amount_with_no_changes(self):
+        """
+        The update_amount method of the Purchase model should update
+        the amount of the purchase according to changes in quantity. If
+        nothing has changed, then the amount should not be affected.
+        """
+        self.assertEqual(self.purchase.amount, 10)
+
+        self.purchase.update_amount()
+
+        self.assertEqual(self.purchase.amount, 10)
+
+    def test_purchase_comp(self):
+        """
+        The comp method of the Purchase model should update the amount
+        of the purchase to 0.
+        """
+        self.assertEqual(self.purchase.amount, 10)
+
+        self.purchase.comp()
+
+        self.assertEqual(self.purchase.amount, 0)
