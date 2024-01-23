@@ -1,34 +1,55 @@
 {% extends "cantina/base.html" %}
 
-{% block title %}Tab: {{ tab.customer.first_name }} {{ tab.customer.last_name }}{% endblock %}
+{% block title %}Tab: {{ instance.customer.name }}{% endblock %}
 
 {% block header %}
-  <h1>{{ tab.customer.first_name }} {{ tab.customer.last_name }}</h1>
+  <h1>Tab {{ instance.id }}</h1>
 {% endblock %}
 
 {% block content %}
-<table>
+  <p>
+    Customer: <a href="{% url 'cantina:view' table='customers' id=instance.customer.id %}">
+      {{ instance.customer.name }}
+    </a><br>
+    Opened: {{ instance.opened|date:"Y-m-d H:i" }}<br>
+    {% if not instance.closed %}
+      Due: {{ instance.due|date:"Y-m-d H:i" }}<br>
+    {% else %}
+      Closed: {{ instance.closed|date:"Y-m-d H:i" }}<br>
+    {% endif %}
+  </p>
+  <p>
+    <a href="{% url 'cantina:edit' table='tabs' id=instance.id %}">Edit</a>
+    <a href="{% url 'cantina:delete' table='tabs' id=instance.id %}">Delete</a>
+  </p>
+  <table>
     <thead>
-      <th>Drink</th>
-      <th>Quantity</th>
       <th>Time</th>
-      <th>Edit</th>
-      <th>Delete</th>
+      <th>Item</th>
+      <th>Quantity</th>
+      <th>Amount</th>
     </thead>
     <tbody>
-      {% for purchase in purchases %}
+      {% for purchase in instance.get_purchases %}
         <tr>
-          <td>{{ purchase.drink.name }}</td>
-          <td>{{ purchase.quantity }}</td>
           <td>{{ purchase.time|date:"Y-m-d H:i" }}</td>
-          <td>
-            <a href="{% url 'cantina:edit_purchase' purchase.id %}">Edit</a>
-          </td>
-          <td>
-            <a href="{% url 'cantina:delete_purchase' purchase.id %}">Delete</a>
-          </td>
+          <td>{{ purchase.item.name }}</td>
+          <td>{{ purchase.quantity }}</td>
+          <td>{{ purchase.amount }}</td>
+          {% if not instance.closed %}
+            <td>
+              <a href="{% url 'cantina:comp_purchase' id=purchase.id %}">Comp</a>
+            </td>
+            <td>
+              <a href="{% url 'cantina:edit' table='purchases' id=purchase.id %}">Edit</a>
+            </td>
+            <td>
+              <a href="{% url 'cantina:delete' table='purchases' id=purchase.id %}">Delete</a>
+            </td>
+          {% endif %}
         </tr>
       {% endfor %}
     </tbody>
   </table>
+  <p>Total: {{ instance.get_amount }} credits</p>
 {% endblock %}

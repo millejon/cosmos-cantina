@@ -1,0 +1,45 @@
+{% extends "cantina/base.html" %}
+
+{% block title %}
+  {% if table == "purchases" %}
+    Place Order
+  {% elif category %}
+    Add {{ category.name }}
+  {% else %}
+    Add {{ table|title|slice:":-1" }}
+  {% endif %}
+{% endblock %}
+
+{% block header %}
+  {% if table == "purchases" %}
+    <h1>Place Order</h1>
+  {% elif category %}
+    <h1>Add {{ category.name }} to {{ table|title }}</h1>
+  {% elif item %}
+    <h1>Add {{ table|title|slice:":-1" }} to {{ item.name }}</h1>
+  {% else %}
+    <h1>Add {{ table|title|slice:":-1" }}</h1>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if category %}
+    <form action="{% url 'cantina:add_item' table=table id=category.id %}" method="post">
+  {% elif item %}
+    <form action="{% url 'cantina:menu_options' table=table item=item.id %}" method="post">
+  {% else %}
+    <form action="{% url 'cantina:add' table=table %}" method="post">
+  {% endif %}
+
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    {% if table == "purchases" %}
+      <button name="submit">Submit order</button>
+    {% elif category %}
+      <button name="submit">Add {{ category.name }}</button>
+    {% else %}
+      <button name="submit">Add {{ table|title|slice:":-1" }}</button>
+    {% endif %}
+  </form>
+{% endblock %}

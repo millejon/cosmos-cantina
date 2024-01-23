@@ -10,12 +10,12 @@
   <body>
     <section id="content">
       <header>
-        <a href="{% url 'cantina:all_tabs' %}">Tabs</a> -
-        <a href="{% url 'cantina:menu' %}">Menu</a> -
-        <a href="{% url 'cantina:all_customers' %}">Customers</a><br>
-        <a href="{% url 'cantina:add_customer' %}">Add Customer</a> -
-        <a href="{% url 'cantina:inventory' %}">Inventory</a> -
-        <a href="{% url 'cantina:all_purchases' %}">Transactions</a><br>
+        <a href="{% url 'cantina:view_all' table='tabs' %}">Tabs</a> -
+        <a href="{% url 'cantina:view_categories' table='menu' %}">Menu</a> -
+        <a href="{% url 'cantina:view_all' table='customers' %}">Customers</a><br>
+        <a href="{% url 'cantina:add' table='customers' %}">Add Customer</a> -
+        <a href="{% url 'cantina:view_categories' table='inventory' %}">Inventory</a> -
+        <a href="{% url 'cantina:view_all' table='purchases' %}">Purchases</a><br>
         {% block header %}{% endblock %}
       </header>
       {% block content %}{% endblock %}

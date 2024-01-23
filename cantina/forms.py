@@ -31,7 +31,7 @@ class InventoryItemForm(forms.ModelForm):
 class ComponentForm(forms.ModelForm):
     class Meta:
         model = models.Component
-        fields = ["ingredient", "amount"]
+        fields = ["item", "ingredient", "amount"]
 
 
 class PurchaseForm(forms.ModelForm):
@@ -43,7 +43,7 @@ class PurchaseForm(forms.ModelForm):
 
     class Meta:
         model = models.Purchase
-        fields = ["drink", "customer", "quantity"]
+        fields = ["customer", "item", "quantity"]
 
 
 class TabForm(forms.ModelForm):

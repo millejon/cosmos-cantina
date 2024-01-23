@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404, render, redirect
 
-from . import forms, models
+from . import models
+from .data import objects
 
 
 ########################################################################
@@ -8,222 +9,127 @@ from . import forms, models
 #                                VIEWS                                 #
 #                                                                      #
 ########################################################################
-def all_customers(request):
-    customers = models.Customer.objects.all()
-    context = {"customers": customers}
-    return render(request, "cantina/all_customers.html", context)
+def view_all_instances(request, table, id=None):
+    if id:
+        category = get_object_or_404(objects[table]["categories"], pk=id)
+        instances = objects[table]["model"].objects.filter(category=category)
+        context = {"instances": instances, "category": category}
+    else:
+        instances = objects[table]["model"].objects.all()
+        context = {"instances": instances}
+
+    return render(request, f"cantina/{table}.html", context)
 
 
-def customer_detail(request, customer_id):
-    customer = get_object_or_404(models.Customer, pk=customer_id)
-    context = {"customer": customer}
-    return render(request, "cantina/customer.html", context)
+def view_instance(request, table, id):
+    instance = get_object_or_404(objects[table]["model"], pk=id)
+    context = {"instance": instance}
+
+    if table.endswith("s"):
+        return render(request, f"cantina/{table[:-1]}.html", context)
+    else:
+        return render(request, f"cantina/{table}_item.html", context)
 
 
-def add_customer(request):
+def view_categories(request, table):
+    categories = objects[table]["categories"].objects.all()
+    context = {"categories": categories, "table": table}
+    return render(request, "cantina/categories.html", context)
+
+
+def add_instance(request, table, id=None, item=None):
+    category = get_object_or_404(objects[table]["categories"], pk=id) if id else None
+    item = get_object_or_404(objects["menu"]["model"], pk=item) if item else None
+
     if request.method == "POST":
-        form = forms.CustomerForm(data=request.POST)
+        form = objects[table]["form"](data=request.POST)
+
+        if form.is_valid():
+            if table == "purchases":
+                purchase = form.save(commit=False)
+                purchase.tab = get_tab(request.POST["customer"])
+                purchase.update_amount()
+                purchase.save()
+                return redirect(
+                    "cantina:view_category", table="menu", id=item.category.id
+                )
+            elif table == "components":
+                form.save()
+                return redirect("cantina:view", table="menu", id=item.id)
+            else:
+                instance = form.save()
+                return redirect("cantina:view", table=table, id=instance.id)
+    else:
+        form = objects[table]["form"](initial={"category": category, "item": item})
+
+    context = {"form": form, "table": table, "category": category, "item": item}
+    return render(request, "cantina/add_instance.html", context)
+
+
+def edit_instance(request, table, id):
+    instance = get_object_or_404(objects[table]["model"], pk=id)
+
+    if request.method == "POST":
+        form = objects[table]["form"](instance=instance, data=request.POST)
 
         if form.is_valid():
             form.save()
-            return redirect("cantina:all_customers")
+            if table == "components":
+                return redirect("cantina:view", table="menu", id=instance.item.id)
+            else:
+                return redirect("cantina:view", table=table, id=id)
     else:
-        form = forms.CustomerForm()
+        form = objects[table]["form"](instance=instance)
 
-    context = {"form": form}
-    return render(request, "cantina/add_customer.html", context)
+    context = {"instance": instance, "form": form, "table": table}
+    return render(request, "cantina/edit_instance.html", context)
 
 
-def edit_customer(request, customer_id):
-    customer = get_object_or_404(models.Customer, pk=customer_id)
+def delete_instance(request, table, id):
+    instance = get_object_or_404(objects[table]["model"], pk=id)
+    instance.delete()
+
+    if table == "purchases":
+        return redirect("cantina:view", table="tabs", id=instance.tab.id)
+    elif table == "components":
+        return redirect("cantina:view", table="menu", id=instance.item.id)
+    elif not table.endswith("s"):
+        return redirect("cantina:view_category", table=table, id=instance.category.id)
+    else:
+        return redirect("cantina:view_all", table=table)
+
+
+def edit_purchase(request, id):
+    purchase = get_object_or_404(objects["purchases"]["model"], pk=id)
 
     if request.method == "POST":
-        form = forms.CustomerForm(instance=customer, data=request.POST)
-
-        if form.is_valid():
-            form.save()
-            return redirect("cantina:customer_detail", customer_id=customer.id)
-    else:
-        form = forms.CustomerForm(instance=customer)
-
-    context = {"customer": customer, "form": form}
-    return render(request, "cantina/edit_customer.html", context)
-
-
-def delete_customer(request, customer_id):
-    customer = get_object_or_404(models.Customer, pk=customer_id)
-    customer.delete()
-    return redirect("cantina:all_customers")
-
-
-def menu(request):
-    categories = models.DrinkCategory.objects.all()
-    context = {"categories": categories}
-    return render(request, "cantina/menu.html", context)
-
-
-def menu_category(request, category_id):
-    category = get_object_or_404(models.DrinkCategory, pk=category_id)
-    items = models.Drink.objects.filter(category=category)
-    context = {"category": category, "items": items}
-    return render(request, "cantina/menu_category.html", context)
-
-
-def menu_detail(request, drink_id):
-    drink = get_object_or_404(models.Drink, pk=drink_id)
-    recipe = models.Recipe.objects.filter(drink=drink)
-    context = {"drink": drink, "recipe": recipe}
-    return render(request, "cantina/drink.html", context)
-
-
-def add_purchase(request, drink_id):
-    drink = get_object_or_404(models.Drink, pk=drink_id)
-
-    if request.method == "POST":
-        form = forms.PurchaseForm(data=request.POST)
+        form = objects["purchases"]["form"](instance=purchase, data=request.POST)
 
         if form.is_valid():
             purchase = form.save(commit=False)
             purchase.tab = get_tab(request.POST["customer"])
+            purchase.update_amount()
             purchase.save()
-            return redirect("cantina:menu_category", category_id=drink.category.id)
-    else:
-        form = forms.PurchaseForm(initial={"drink": drink})
-
-    context = {"drink": drink, "form": form}
-    return render(request, "cantina/add_purchase.html", context)
-
-
-def add_menu_item(request):
-    if request.method == "POST":
-        form = forms.DrinkForm(data=request.POST)
-        category = int(request.POST["category"])
-
-        if form.is_valid():
-            form.save()
-            return redirect("cantina:menu_category", category_id=category)
-    else:
-        form = forms.DrinkForm()
-
-    context = {"form": form}
-    return render(request, "cantina/add_menu_item.html", context)
-
-
-def edit_menu(request, drink_id):
-    drink = get_object_or_404(models.Drink, pk=drink_id)
-    recipe = models.Recipe.objects.filter(drink=drink)
-
-    if request.method == "POST":
-        form = forms.DrinkForm(instance=drink, data=request.POST)
-
-        if form.is_valid():
-            form.save()
-            return redirect("cantina:menu_category", category_id=drink.category.id)
-    else:
-        form = forms.DrinkForm(instance=drink)
-
-    context = {"drink": drink, "recipe": recipe, "form": form}
-    return render(request, "cantina/edit_menu.html", context)
-
-
-def delete_menu_item(request, item_id):
-    item = get_object_or_404(models.Drink, pk=item_id)
-    category = item.category.id
-    item.delete()
-    return redirect("cantina:menu_category", category_id=category)
-
-
-def edit_recipe(request, recipe_id):
-    recipe = get_object_or_404(models.Recipe, pk=recipe_id)
-
-    if request.method == "POST":
-        form = forms.RecipeForm(instance=recipe, data=request.POST)
-
-        if form.is_valid():
-            form.save()
-            return redirect("cantina:menu_detail", drink_id=recipe.drink.id)
-    else:
-        form = forms.RecipeForm(instance=recipe)
-
-    context = {"recipe": recipe, "form": form}
-    return render(request, "cantina/edit_recipe.html", context)
-
-
-def all_tabs(request):
-    tabs = models.Tab.objects.all()
-    context = {"tabs": tabs}
-    return render(request, "cantina/all_tabs.html", context)
-
-
-def tab(request, tab_id):
-    tab = get_object_or_404(models.Tab, pk=tab_id)
-    purchases = tab.purchase_set.all()
-    context = {"tab": tab, "purchases": purchases}
-    return render(request, "cantina/tab.html", context)
-
-
-def edit_tab(request, tab_id):
-    tab = get_object_or_404(models.Tab, pk=tab_id)
-
-    if request.method == "POST":
-        form = forms.TabForm(instance=tab, data=request.POST)
-
-        if form.is_valid():
-            form.save()
-            return redirect("cantina:all_tabs")  # Change this back to tab detail view
-    else:
-        form = forms.TabForm(instance=tab)
-
-    context = {"tab": tab, "form": form}
-    return render(request, "cantina/edit_tab.html", context)
-
-
-def delete_tab(request, tab_id):
-    tab = get_object_or_404(models.Tab, pk=tab_id)
-    tab.delete()
-    return redirect("cantina:all_tabs")
-
-
-def all_purchases(request):
-    purchases = models.Purchase.objects.all()
-    context = {"purchases": purchases}
-    return render(request, "cantina/all_purchases.html", context)
-
-
-def edit_purchase(request, purchase_id):
-    purchase = get_object_or_404(models.Purchase, pk=purchase_id)
-
-    if request.method == "POST":
-        form = forms.PurchaseForm(instance=purchase, data=request.POST)
-
-        if form.is_valid():
-            purchase = form.save(commit=False)
-            purchase.tab = get_tab(request.POST["customer"])
-            purchase.save()
-            return redirect(
-                "cantina:all_purchases"
-            )  # Change this back to purchase detail view
+            return redirect("cantina:view", table="tabs", id=purchase.tab.id)
     else:
         customer = (
             purchase.tab.customer.id,
             f"{purchase.tab.customer.first_name} {purchase.tab.customer.last_name}",
         )
-        form = forms.PurchaseForm(initial={"customer": customer}, instance=purchase)
+        form = objects["purchases"]["form"](
+            initial={"customer": customer}, instance=purchase
+        )
 
-    context = {"purchase": purchase, "form": form}
-    return render(request, "cantina/edit_purchase.html", context)
-
-
-def delete_purchase(request, purchase_id):
-    purchase = get_object_or_404(models.Purchase, pk=purchase_id)
-    purchase.delete()
-    return redirect("cantina:all_purchases")
+    context = {"instance": purchase, "form": form, "table": "purchases"}
+    return render(request, "cantina/edit_instance.html", context)
 
 
-def inventory(request):
-    inventory = models.Ingredient.objects.all()
-    context = {"inventory": inventory}
-    return render(request, "cantina/inventory.html", context)
+def comp_purchase(request, id):
+    purchase = get_object_or_404(objects["purchases"]["model"], pk=id)
+    purchase.comp()
+    purchase.save()
+
+    return redirect("cantina:view", table="tabs", id=purchase.tab.id)
 
 
 ########################################################################
@@ -231,7 +137,7 @@ def inventory(request):
 #                           HELPER FUNCTIONS                           #
 #                                                                      #
 ########################################################################
-def get_tab(customer: str) -> models.Tab:
+def get_tab(customer: int) -> models.Tab:
     """
     Return customer's open tab or, if the customer does not currently
     have an open tab, create one and return.

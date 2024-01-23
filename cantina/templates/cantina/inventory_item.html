@@ -1,0 +1,20 @@
+{% extends "cantina/base.html" %}
+
+{% block title %}Inventory: {{ instance.name }}{% endblock %}
+
+{% block header %}
+  <h1>{{ instance.name }} [{{ instance.category.name }}]</h1>
+{% endblock %}
+
+{% block content %}
+  <p>
+    Stock: {{ instance.stock }}<br>
+    Cost: {{ instance.cost }}<br>
+    Reorder Point: {{ instance.reorder_point }}<br>
+    Reorder Amount: {{ instance.reorder_amount }}<br>
+  </p>
+  <p>
+    <a href="{% url 'cantina:edit' table='inventory' id=instance.id %}">Edit</a>
+    <a href="{% url 'cantina:delete' table='inventory' id=instance.id %}">Delete</a>
+  </p>
+{% endblock %}

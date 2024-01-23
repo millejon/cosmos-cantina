@@ -1,18 +1,29 @@
 {% extends "cantina/base.html" %}
 
-{% block title %}Menu{% endblock %}
+{% block title %}{{ category.name }} Menu{% endblock %}
 
 {% block header %}
-  <h1>Menu</h1>
+  <h1>{{ category.name }} Menu</h1>
 {% endblock %}
 
 {% block content %}
+  <p>
+    <a href="{% url 'cantina:add_item' table='menu' id=category.id %}">Add {{ category.name }}</a>
+  </p>
   <table>
+    <thead>
+      <th>Name</th>
+      <th>Price</th>
+    </thead>
     <tbody>
-      {% for category in categories %}
+      {% for instance in instances %}
         <tr>
           <td>
-            <a href="{% url 'cantina:menu_category' category.id %}">{{ category.name }}</a>
+            <a href="{% url 'cantina:view' table='menu' id=instance.id %}">{{ instance.name }}</a>
+          </td>
+          <td>{{ instance.price }}</td>
+          <td>
+            <a href="{% url 'cantina:menu_options' table='purchases' item=instance.id %}">Order</a>
           </td>
         </tr>
       {% endfor %}
