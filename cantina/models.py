@@ -122,8 +122,6 @@ class Purchase(models.Model):
 
     def update_amount(self):
         self.amount = self.item.price * self.quantity
-        self.save()
 
     def comp(self):
         self.amount = 0
-        self.save()
