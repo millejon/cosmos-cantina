@@ -1,0 +1,29 @@
+{% extends "cantina/base.html" %}
+
+{% block title %}Edit 
+  {% if not instance.name %}
+    {{ table|title|slice:":-1" }}
+  {% else %}
+    {{ instance.name }}
+  {% endif %}
+{% endblock %}
+
+{% block header %}
+  {% if not instance.name %}
+    <h1>Edit {{ table|title|slice:":-1" }}:</h1>
+  {% else %}
+  <h1>Editing: {{ instance.name }}
+    {% if instance.category %}
+      [{{ instance.category.name }}]
+    {% endif %}
+  </h1>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <form action="{% url 'cantina:edit' table=table id=instance.id %}" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button name="submit">Save changes</button>
+  </form>
+{% endblock %}

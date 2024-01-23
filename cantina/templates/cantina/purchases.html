@@ -1,0 +1,36 @@
+{% extends "cantina/base.html" %}
+
+{% block title %}Purchases{% endblock %}
+
+{% block header %}
+  <h1>Purchases</h1>
+{% endblock %}
+
+{% block content %}
+  <table>
+    <thead>
+      <th>Time</th>
+      <th>Tab #</th>
+      <th>Customer</th>
+      <th>Item</th>
+      <th>Quantity</th>
+      <th>Amount</th>
+    </thead>
+    <tbody>
+      {% for purchase in instances %}
+        <tr>
+          <td>{{ purchase.time|date:"Y-m-d H:i" }}</td>
+          <td>
+            <a href="{% url 'cantina:view' table='tabs' id=purchase.tab.id %}">
+              {{ purchase.tab.id }}
+            </a>
+          </td>
+          <td>{{ purchase.tab.customer.name }}</td>
+          <td>{{ purchase.item.name }}</td>
+          <td>{{ purchase.quantity }}</td>
+          <td>{{ purchase.amount }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "cantina/base.html" %}
+
+{% block title %}Customers{% endblock %}
+
+{% block header %}
+  <h1>Customers</h1>
+{% endblock %}
+
+{% block content %}
+  <table>
+    <thead>
+      <th>Name</th>
+      <th>Planet</th>
+      <th>UBA Number</th>
+    </thead>
+    <tbody>
+      {% for customer in instances %}
+        <tr>
+          <td>
+            <a href="{% url 'cantina:view' table='customers' id=customer.id %}">
+              {{ customer.name }}
+            </a>
+          </td>
+          <td>{{ customer.planet }}</td>
+          <td>{{ customer.uba }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

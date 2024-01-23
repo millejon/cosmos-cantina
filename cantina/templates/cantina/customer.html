@@ -1,0 +1,45 @@
+{% extends "cantina/base.html" %}
+
+{% block title %}{{ instance.name }}{% endblock %}
+
+{% block header %}
+  <h1>{{ instance.name }}</h1>
+{% endblock %}
+
+{% block content %}
+  <p>
+    Planet: {{ instance.planet }}<br>
+    {% if instance.uba %}
+      UBA: {{ instance.uba }}<br>
+    {% endif %}
+  </p>
+  <p>
+    <a href="{% url 'cantina:edit' table='customers' id=instance.id %}">Edit</a>
+    <a href="{% url 'cantina:delete' table='customers' id=instance.id %}">Delete</a>
+  </p>
+  {% if instance.tab_set.all %}
+    <h2>Account History:</h2>
+    <table>
+      <thead>
+        <th>Tab #</th>
+        <th>Amount</th>
+        <th>Closed</th>
+        <th>Due</th>
+      </thead>
+      <tbody>
+        {% for tab in instance.tab_set.all %}
+          <tr>
+            <td>
+              <a href="{% url 'cantina:view' table='tabs' id=tab.id %}">{{ tab.id }}</a>
+            </td>
+            <td>{{ tab.get_amount }}</td>
+            <td>{{ tab.closed|date:"Y-m-d H:i" }}</td>
+            {% if not tab.closed %}
+              <td>{{ tab.due|date:"Y-m-d H:i" }}</td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+{% endblock %}
