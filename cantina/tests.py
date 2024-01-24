@@ -3,31 +3,44 @@ from django.test import TestCase
 from . import models
 
 
-def create_menu_item() -> None:
-    """Create a MenuItem object for use in purchases."""
-    category = models.MenuItemCategory.objects.create(name="Beer")
-    models.MenuItem.objects.create(name="Duff Beer", category=category, price=5)
+def create_customer(
+    last_name: str, planet: str, first_name: str = None, uba: str = None
+) -> models.Customer:
+    """Create a customer."""
+    return models.Customer.objects.create(
+        last_name=last_name, first_name=first_name, planet=planet, uba=uba
+    )
 
 
-def make_purchase(tab: models.Tab) -> None:
-    """Create a Purchase object assigned to the tab passed."""
+def create_menu_item(name: str, category: str, price: int) -> models.MenuItem:
+    """Create a menu item for use in purchases."""
+    category = models.MenuItemCategory.objects.create(name=category)
+    return models.MenuItem.objects.create(name=name, category=category, price=price)
+
+
+def create_tab(customer: models.Customer) -> models.Tab:
+    """Create a tab assigned to the customer passed."""
+    return models.Tab.objects.create(customer=customer)
+
+
+def make_purchase(
+    tab: models.Tab, item: models.MenuItem, quantity: int, amount: int
+) -> models.Purchase:
+    """Create a purchase assigned to the tab passed."""
     return models.Purchase.objects.create(
-        tab=tab,
-        item=models.MenuItem.objects.get(name="Duff Beer"),
-        quantity=2,
-        amount=10,
+        tab=tab, item=item, quantity=quantity, amount=amount
     )
 
 
 class CustomerTestCase(TestCase):
     def setUp(self):
-        models.Customer.objects.create(
+        create_customer(
             last_name="Radd",
             first_name="Norrin",
             planet="Zenn-La",
             uba="OHCMSZ9QF928JZNS4H20IKXP",
         )
-        models.Customer.objects.create(last_name="Galactus", planet="Galan")
+        create_customer(last_name="Galactus", first_name="", planet="Galan", uba="")
 
     def test_customer_names(self):
         """
@@ -44,11 +57,11 @@ class CustomerTestCase(TestCase):
 
 class TabTestCase(TestCase):
     def setUp(self):
-        self.customer = models.Customer.objects.create(
-            last_name="Thanos", planet="Titan"
+        customer = create_customer(
+            last_name="Thanos", first_name="", planet="Titan", uba=""
         )
-        self.tab = models.Tab.objects.create(customer=self.customer)
-        create_menu_item()
+        self.tab = create_tab(customer=customer)
+        self.item = create_menu_item(name="Duff Beer", category="Beer", price=5)
 
     def test_tab_get_purchases_with_single_purchase(self):
         """
@@ -56,7 +69,7 @@ class TabTestCase(TestCase):
         number of purchases assigned to the tab. A tab with a single
         purchase should return 1.
         """
-        make_purchase(self.tab)
+        make_purchase(tab=self.tab, item=self.item, quantity=2, amount=10)
 
         self.assertEqual(len(self.tab.get_purchases()), 1)
 
@@ -67,7 +80,7 @@ class TabTestCase(TestCase):
         purchases should return 5.
         """
         for _ in range(5):
-            make_purchase(self.tab)
+            make_purchase(tab=self.tab, item=self.item, quantity=2, amount=10)
 
         self.assertEqual(len(self.tab.get_purchases()), 5)
 
@@ -84,9 +97,9 @@ class TabTestCase(TestCase):
         The get_amount method of the Tab model should return the total
         price of all purchases assigned to the tab.
         """
-        make_purchase(self.tab)
+        make_purchase(tab=self.tab, item=self.item, quantity=3, amount=15)
 
-        self.assertEqual(self.tab.get_amount(), 10)
+        self.assertEqual(self.tab.get_amount(), 15)
 
     def test_tab_get_amount_with_multiple_purchase(self):
         """
@@ -94,9 +107,9 @@ class TabTestCase(TestCase):
         price of all purchases assigned to the tab.
         """
         for _ in range(5):
-            make_purchase(self.tab)
+            make_purchase(tab=self.tab, item=self.item, quantity=4, amount=20)
 
-        self.assertEqual(self.tab.get_amount(), 50)
+        self.assertEqual(self.tab.get_amount(), 100)
 
     def test_tab_get_amount_with_no_purchase(self):
         """
@@ -113,7 +126,7 @@ class TabTestCase(TestCase):
         after a purchase is comped should be updated accordingly.
         """
         for _ in range(5):
-            make_purchase(self.tab)
+            make_purchase(tab=self.tab, item=self.item, quantity=2, amount=10)
 
         self.assertEqual(self.tab.get_amount(), 50)
 
@@ -126,10 +139,12 @@ class TabTestCase(TestCase):
 
 class PurchaseTestCase(TestCase):
     def setUp(self):
-        customer = models.Customer.objects.create(last_name="Thanos", planet="Titan")
-        tab = models.Tab.objects.create(customer=customer)
-        create_menu_item()
-        self.purchase = make_purchase(tab)
+        customer = create_customer(
+            last_name="Quill", first_name="Peter", planet="Earth", uba=""
+        )
+        tab = create_tab(customer=customer)
+        item = create_menu_item(name="Duff Beer", category="Beer", price=5)
+        self.purchase = make_purchase(tab=tab, item=item, quantity=2, amount=10)
 
     def test_purchase_update_amount_with_change_to_quantity(self):
         """
