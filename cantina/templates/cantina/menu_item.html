@@ -16,27 +16,31 @@
     <a href="{% url 'cantina:delete' 'menu' instance.id %}">Delete</a>
   </p>
   <h2>Components:</h2>
-  <table>
-    <thead>
-      <th>Ingredient</th>
-      <th>Amount</th>
-    </thead>
-    <tbody>
-      {% for component in instance.component_set.all %}
-        <tr>
-          <td>{{ component.ingredient.name }}</td>
-          <td>{{ component.amount }} oz.</td>
-          <td>
-            <a href="{% url 'cantina:edit' 'components' component.id %}">Edit</a>
-          </td>
-          <td>
-            <a href="{% url 'cantina:delete' 'components' component.id %}">Delete</a>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  <p>
-    <a href="{% url 'cantina:menu_options' table='components' item=instance.id %}">Add component</a>
-  </p>
+  {% if instance.component_set %}
+    <table>
+      <thead>
+        <th>Ingredient</th>
+        <th>Amount</th>
+      </thead>
+      <tbody>
+        {% for component in instance.component_set.all %}
+          <tr>
+            <td>{{ component.ingredient.name }}</td>
+            <td>{{ component.amount }} oz.</td>
+            <td>
+              <a href="{% url 'cantina:edit' 'components' component.id %}">Edit</a>
+            </td>
+            <td>
+              <a href="{% url 'cantina:delete' 'components' component.id %}">Delete</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No components have been added.</p>
+  {% endif %}
+    <p>
+      <a href="{% url 'cantina:menu_options' table='components' item=instance.id %}">Add component</a>
+    </p>
 {% endblock %}

@@ -10,23 +10,27 @@
   <p>
     <a href="{% url 'cantina:add_item' table='menu' id=category.id %}">Add {{ category.name }}</a>
   </p>
-  <table>
-    <thead>
-      <th>Name</th>
-      <th>Price</th>
-    </thead>
-    <tbody>
-      {% for instance in instances %}
-        <tr>
-          <td>
-            <a href="{% url 'cantina:view' table='menu' id=instance.id %}">{{ instance.name }}</a>
-          </td>
-          <td>{{ instance.price }}</td>
-          <td>
-            <a href="{% url 'cantina:menu_options' table='purchases' item=instance.id %}">Order</a>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  {% if instances %}
+    <table>
+      <thead>
+        <th>Name</th>
+        <th>Price</th>
+      </thead>
+      <tbody>
+        {% for instance in instances %}
+          <tr>
+            <td>
+              <a href="{% url 'cantina:view' table='menu' id=instance.id %}">{{ instance.name }}</a>
+            </td>
+            <td>{{ instance.price }}</td>
+            <td>
+              <a href="{% url 'cantina:menu_options' table='purchases' item=instance.id %}">Order</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No {{ category.name|lower }} is available.</p>
+  {% endif %}
 {% endblock %}
