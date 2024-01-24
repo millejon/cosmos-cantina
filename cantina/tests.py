@@ -102,6 +102,23 @@ class TabTestCase(TestCase):
         """
         self.assertEqual(self.tab.get_amount(), 0)
 
+    def test_tab_get_amount_with_comped_purchase(self):
+        """
+        The get_amount method of the Tab model should return the total
+        price of all purchases assigned to the tab. The amount of a tab
+        after a purchase is comped should be updated accordingly.
+        """
+        for _ in range(5):
+            self.make_purchase()
+
+        self.assertEqual(self.tab.get_amount(), 50)
+
+        purchase = self.tab.purchase_set.all()[0]
+        purchase.comp()
+        purchase.save()
+
+        self.assertEqual(self.tab.get_amount(), 40)
+
 
 class PurchaseTestCase(TestCase):
     def setUp(self):
