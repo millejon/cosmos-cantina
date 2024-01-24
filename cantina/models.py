@@ -1,8 +1,10 @@
 from django.db import models
 from django.utils import timezone
+import datetime
+import decimal
 
 
-def a_week_from_now():
+def a_week_from_now() -> datetime.datetime:
     """Add 7 days to the current point in time."""
     return timezone.now() + timezone.timedelta(days=7)
 
@@ -25,8 +27,15 @@ class Customer(models.Model):
         return f"{self.first_name} {self.last_name}"
 
     @property
-    def name(self):
-        return f"{self.first_name} {self.last_name}"
+    def name(self) -> str:
+        """
+        Return customer's full name. If customer has only one name,
+        then only it will be returned.
+        """
+        if self.first_name:
+            return f"{self.first_name} {self.last_name}"
+        else:
+            return f"{self.last_name}"
 
 
 class MenuItemCategory(models.Model):
@@ -106,11 +115,22 @@ class Tab(models.Model):
         else:
             return f"{self.customer.first_name} {self.customer.last_name} [{self.closed.strftime('%Y-%m-%d %H:%M')}]"
 
-    def get_purchases(self):
+    def get_purchases(self) -> models.query.QuerySet:
+        """
+        Return all purchases associated with the tab in chronological
+        order.
+        """
         return self.purchase_set.all().order_by("time")
 
-    def get_amount(self):
-        return self.purchase_set.aggregate(models.Sum("amount"))["amount__sum"]
+    def get_amount(self) -> decimal.Decimal:
+        """
+        Return total price of all purchases made on the tab. If zero
+        purchases were made, an amount of 0 is returned.
+        """
+        if self.purchase_set.all():
+            return self.purchase_set.aggregate(models.Sum("amount"))["amount__sum"]
+        else:
+            return decimal.Decimal(0)
 
 
 class Purchase(models.Model):
@@ -126,8 +146,15 @@ class Purchase(models.Model):
     def __str__(self):
         return f"{self.tab.customer.last_name}: {self.item.name} x {self.quantity}"
 
-    def update_amount(self):
+    def update_amount(self) -> None:
+        """
+        Update amount of purchase according to the cost of the menu
+        item and the quantity of the item purchased.
+        """
         self.amount = self.item.price * self.quantity
 
-    def comp(self):
+    def comp(self) -> None:
+        """
+        Set amount of purchase to 0.
+        """
         self.amount = 0
