@@ -50,9 +50,9 @@ jobs:
         echo DB_PASSWORD="\"password\"" >> cosmos_cantina/config.py
         echo DB_HOST="\"localhost\"" >> cosmos_cantina/config.py
         echo DB_PORT="\"5432\"" >> cosmos_cantina/config.py
-        cat cosmos_cantina/config.py
     - name: Run migrations
       run: |
+        python manage.py makemigrations
         python manage.py migrate
     - name: Test with Django
       run: |
