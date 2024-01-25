@@ -44,13 +44,12 @@ jobs:
     - name: Create config file
       run: |
         touch cosmos_cantina/config.py
-        echo SECRET_KEY="secret_key"
+        echo SECRET_KEY="secret_key" > cosmos_cantina/config.py
         echo DB_NAME="github_testing" > cosmos_cantina/config.py
         echo DB_USER="github" > cosmos_cantina/config.py
         echo DB_PASSWORD="password" > cosmos_cantina/config.py
         echo DB_HOST="127.0.0.1" > cosmos_cantina/config.py
         echo DB_PORT="9311" > cosmos_cantina/config.py
-        cat cosmos_cantina/config.py
     - name: Run migrations
       run: |
         python manage.py migrate
