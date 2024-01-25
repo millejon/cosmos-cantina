@@ -19,7 +19,7 @@ jobs:
         env:
           POSTGRES_USER: github
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: github_testing
+          POSTGRES_DB: cosmos-cantina
         ports:
           - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
@@ -45,7 +45,7 @@ jobs:
       run: |
         touch cosmos_cantina/config.py
         echo SECRET_KEY="\"secret_key\"" > cosmos_cantina/config.py
-        echo DB_NAME="\"github_testing\"" >> cosmos_cantina/config.py
+        echo DB_NAME="\"cosmos-cantina\"" >> cosmos_cantina/config.py
         echo DB_USER="\"github\"" >> cosmos_cantina/config.py
         echo DB_PASSWORD="\"password\"" >> cosmos_cantina/config.py
         echo DB_HOST="\"localhost\"" >> cosmos_cantina/config.py
