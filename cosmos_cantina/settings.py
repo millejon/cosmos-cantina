@@ -9,8 +9,6 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
-
-import os
 from pathlib import Path
 from . import config
 
@@ -86,18 +84,6 @@ DATABASES = {
         "PORT": config.DB_PORT,
     }
 }
-
-if os.environ.get("GITHUB_TESTING"):
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": "github_testing",
-            "USER": "github",
-            "PASSWORD": "password",
-            "HOST": "127.0.0.1",
-            "PORT": "9311",
-        }
-    }
 
 
 # Password validation
