@@ -21,7 +21,7 @@ jobs:
           POSTGRES_PASSWORD: password
           POSTGRES_DB: github_testing
         ports:
-          - 9311:9311
+          - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
@@ -49,7 +49,7 @@ jobs:
         echo DB_USER="\"github\"" >> cosmos_cantina/config.py
         echo DB_PASSWORD="\"password\"" >> cosmos_cantina/config.py
         echo DB_HOST="\"localhost\"" >> cosmos_cantina/config.py
-        echo DB_PORT="\"9311\"" >> cosmos_cantina/config.py
+        echo DB_PORT="\"5432\"" >> cosmos_cantina/config.py
         cat cosmos_cantina/config.py
     - name: Run migrations
       run: |
