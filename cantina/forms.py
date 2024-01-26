@@ -35,11 +35,12 @@ class ComponentForm(forms.ModelForm):
 
 
 class PurchaseForm(forms.ModelForm):
-    # customer_choices = (
-    #     (customer.id, f"{customer.first_name} {customer.last_name}")
-    #     for customer in models.Customer.objects.all()
-    # )
-    customer = forms.DateTimeInput(attrs={"type": "datetime-local"})
+    customer_choices = (
+        (1, "Luke Skywalker")
+        # (customer.id, f"{customer.first_name} {customer.last_name}")
+        # for customer in models.Customer.objects.all()
+    )
+    customer = forms.ChoiceField(choices=customer_choices)
 
     class Meta:
         model = models.Purchase
