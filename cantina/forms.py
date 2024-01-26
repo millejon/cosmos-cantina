@@ -35,12 +35,7 @@ class ComponentForm(forms.ModelForm):
 
 
 class PurchaseForm(forms.ModelForm):
-    customer_choices = (
-        (1, "Luke Skywalker")
-        # (customer.id, f"{customer.first_name} {customer.last_name}")
-        # for customer in models.Customer.objects.all()
-    )
-    customer = forms.ChoiceField(choices=customer_choices)
+    customer = forms.ModelChoiceField(queryset=models.Customer.objects.all())
 
     class Meta:
         model = models.Purchase
