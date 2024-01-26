@@ -45,9 +45,9 @@ jobs:
       run: |
         touch cosmos_cantina/config.py
         echo SECRET_KEY="\"secret_key\"" > cosmos_cantina/config.py
-        echo DB_NAME="\"cosmos-cantina\"" >> cosmos_cantina/config.py
-        echo DB_USER="\"github\"" >> cosmos_cantina/config.py
-        echo DB_PASSWORD="\"password\"" >> cosmos_cantina/config.py
+        echo DB_NAME="\"postgres\"" >> cosmos_cantina/config.py
+        echo DB_USER="\"postgres\"" >> cosmos_cantina/config.py
+        echo DB_PASSWORD="\"postgres\"" >> cosmos_cantina/config.py
         echo DB_HOST="\"localhost\"" >> cosmos_cantina/config.py
         echo DB_PORT="\"5432\"" >> cosmos_cantina/config.py
     - name: Run migrations
