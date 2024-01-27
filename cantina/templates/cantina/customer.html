@@ -17,7 +17,7 @@
     <a href="{% url 'cantina:edit' table='customers' id=instance.id %}">Edit</a>
     <a href="{% url 'cantina:delete' table='customers' id=instance.id %}">Delete</a>
   </p>
-  {% if instance.tab_set %}
+  {% if instance.tab_set.all %}
     <h2>Account History:</h2>
     <table>
       <thead>

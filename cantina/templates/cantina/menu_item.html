@@ -16,7 +16,7 @@
     <a href="{% url 'cantina:delete' 'menu' instance.id %}">Delete</a>
   </p>
   <h2>Components:</h2>
-  {% if instance.component_set %}
+  {% if instance.component_set.all %}
     <table>
       <thead>
         <th>Ingredient</th>
