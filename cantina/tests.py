@@ -188,7 +188,9 @@ class AllCustomerViewTestCase(TestCase):
         """
         If no customers exist, an appropriate message is displayed.
         """
-        response = self.client.get(reverse("cantina:view_all", args=("customers",)))
+        response = self.client.get(
+            reverse("cantina:view_all", kwargs={"table": "customers"})
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/customers.html")
         self.assertContains(response, "No customers are available.")
@@ -205,7 +207,9 @@ class AllCustomerViewTestCase(TestCase):
             planet="Kree-Lar",
             uba="G66P171OPBQA90AJBT9T22HO",
         )
-        response = self.client.get(reverse("cantina:view_all", args=("customers",)))
+        response = self.client.get(
+            reverse("cantina:view_all", kwargs={"table": "customers"})
+        )
         self.assertQuerySetEqual(response.context["instances"], [captain_marvel])
 
     def test_multiple_customers(self):
@@ -225,7 +229,9 @@ class AllCustomerViewTestCase(TestCase):
             planet="Korbin",
             uba="KRAYCABNAU123FLNO3R77M8B",
         )
-        response = self.client.get(reverse("cantina:view_all", args=("customers",)))
+        response = self.client.get(
+            reverse("cantina:view_all", kwargs={"table": "customers"})
+        )
         self.assertQuerySetEqual(
             response.context["instances"], [beta_ray_bill, gladiator]
         )
@@ -245,7 +251,9 @@ class AllPurchaseViewTestCase(TestCase):
         """
         If no purchases exist, an appropriate message is displayed.
         """
-        response = self.client.get(reverse("cantina:view_all", args=("purchases",)))
+        response = self.client.get(
+            reverse("cantina:view_all", kwargs={"table": "purchases"})
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/purchases.html")
         self.assertContains(response, "No purchases are available.")
@@ -257,7 +265,9 @@ class AllPurchaseViewTestCase(TestCase):
         purchase is added.
         """
         purchase = make_purchase(tab=self.tab, item=self.item, quantity=1, amount=12)
-        response = self.client.get(reverse("cantina:view_all", args=("purchases",)))
+        response = self.client.get(
+            reverse("cantina:view_all", kwargs={"table": "purchases"})
+        )
         self.assertQuerySetEqual(response.context["instances"], [purchase])
 
     def test_multiple_purchases(self):
@@ -267,7 +277,9 @@ class AllPurchaseViewTestCase(TestCase):
         """
         purchase1 = make_purchase(tab=self.tab, item=self.item, quantity=3, amount=36)
         purchase2 = make_purchase(tab=self.tab, item=self.item, quantity=2, amount=24)
-        response = self.client.get(reverse("cantina:view_all", args=("purchases",)))
+        response = self.client.get(
+            reverse("cantina:view_all", kwargs={"table": "purchases"})
+        )
         self.assertQuerySetEqual(response.context["instances"], [purchase2, purchase1])
 
 
@@ -280,7 +292,9 @@ class AllTabViewTestCase(TestCase):
 
     def test_no_tabs(self):
         """If no tabs exist, an appropriate message is displayed."""
-        response = self.client.get(reverse("cantina:view_all", args=("tabs",)))
+        response = self.client.get(
+            reverse("cantina:view_all", kwargs={"table": "tabs"})
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/tabs.html")
         self.assertContains(response, "No tabs are available.")
@@ -293,7 +307,9 @@ class AllTabViewTestCase(TestCase):
         """
         rocket_racoon = models.Customer.objects.get(last_name="Raccoon")
         tab = create_tab(customer=rocket_racoon)
-        response = self.client.get(reverse("cantina:view_all", args=("tabs",)))
+        response = self.client.get(
+            reverse("cantina:view_all", kwargs={"table": "tabs"})
+        )
         self.assertQuerySetEqual(response.context["instances"], [tab])
 
     def test_multiple_tabs(self):
@@ -305,5 +321,7 @@ class AllTabViewTestCase(TestCase):
         groot = models.Customer.objects.get(last_name="Groot")
         tab1 = create_tab(customer=rocket_racoon)
         tab2 = create_tab(customer=groot)
-        response = self.client.get(reverse("cantina:view_all", args=("tabs",)))
+        response = self.client.get(
+            reverse("cantina:view_all", kwargs={"table": "tabs"})
+        )
         self.assertQuerySetEqual(response.context["instances"], [tab2, tab1])
