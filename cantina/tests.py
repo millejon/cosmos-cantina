@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
+from datetime import datetime
 
 from . import models
 
@@ -19,9 +20,9 @@ def create_menu_item(name: str, category: str, price: int) -> models.MenuItem:
     return models.MenuItem.objects.create(name=name, category=category, price=price)
 
 
-def create_tab(customer: models.Customer) -> models.Tab:
+def create_tab(customer: models.Customer, closed: datetime = None) -> models.Tab:
     """Create a tab assigned to the customer passed."""
-    return models.Tab.objects.create(customer=customer)
+    return models.Tab.objects.create(customer=customer, closed=closed)
 
 
 def make_purchase(
@@ -325,3 +326,81 @@ class AllTabViewTestCase(TestCase):
             reverse("cantina:view_all", kwargs={"table": "tabs"})
         )
         self.assertQuerySetEqual(response.context["instances"], [tab2, tab1])
+
+
+class CustomerDetailsTestCase(TestCase):
+    def test_no_customers(self):
+        """
+        If no customers exist, the detail view of a customer should
+        return a 404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:view", kwargs={"table": "customers", "id": 1})
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_customer_info_no_uba(self):
+        """
+        The detail view of a customer should display the customer
+        information. If a customer does not have a UBA number, the
+        field should not be present in the detail view of a customer.
+        """
+        drax = create_customer(
+            last_name="Douglas", first_name="Arthur", planet="Earth", uba=""
+        )
+        response = self.client.get(
+            reverse("cantina:view", kwargs={"table": "customers", "id": drax.id})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/customer.html")
+        self.assertContains(response, drax.last_name)
+        self.assertContains(response, drax.first_name)
+        self.assertContains(response, drax.planet)
+        self.assertNotContains(response, "UBA")
+
+    def test_customer_with_uba_and_no_tabs(self):
+        """
+        If a customer has a UBA number, the detail view of a customer
+        should also displayed it with the rest of the customer
+        information. If the customer has not opened any tabs, there
+        should be no 'Account History' section.
+        """
+        black_bolt = create_customer(
+            last_name="Boltagon",
+            first_name="Blackagar",
+            planet="Attilan",
+            uba="FWURWP48NRK1QAZUHLWX3IL0",
+        )
+        response = self.client.get(
+            reverse("cantina:view", kwargs={"table": "customers", "id": black_bolt.id})
+        )
+        self.assertContains(response, "UBA")
+        self.assertContains(response, black_bolt.uba)
+        self.assertNotContains(response, "Account History")
+
+    def test_customer_with_tabs(self):
+        """
+        If the customer has opened tabs, the detail view for the
+        customer should list the closed tabs last in descending order
+        of when they were closed.
+        """
+        medusa = create_customer(
+            last_name="Amaquelin",
+            first_name="Medusalith",
+            planet="Attilan",
+            uba="KLVREX6N766S014EN01CELID",
+        )
+        tab1 = create_tab(
+            customer=medusa,
+            closed=datetime(year=2023, month=12, day=26, hour=19, minute=20, second=14),
+        )
+        tab2 = create_tab(customer=medusa)
+        tab3 = create_tab(
+            customer=medusa,
+            closed=datetime(year=2024, month=1, day=1, hour=0, minute=0, second=1),
+        )
+        response = self.client.get(
+            reverse("cantina:view", kwargs={"table": "customers", "id": medusa.id})
+        )
+        self.assertContains(response, "Account History")
+        self.assertQuerySetEqual(medusa.tab_set.all(), [tab2, tab3, tab1])
