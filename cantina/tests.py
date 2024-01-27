@@ -822,3 +822,48 @@ class MenuItemDetailsViewTestCase(TestCase):
         self.assertQuerySetEqual(
             multiversal_madness.component_set.all(), [component1, component2]
         )
+
+
+class InventoryItemDetailsViewTestCase(TestCase):
+    def setUp(self):
+        self.category = models.InventoryItemCategory.objects.create(
+            name="Miscellaneous"
+        )
+
+    def test_no_inventory_item(self):
+        """
+        If the inventory item does not exist, the inventory item detail
+        view should return a 404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:view", kwargs={"table": "inventory", "id": 1})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_inventory_item(self):
+        """
+        The detail view of an inventory item should display information
+        about the inventory item.
+        """
+        agave_nectar = create_inventory_item(
+            name="Agave Nectar",
+            category=self.category,
+            stock=100,
+            cost=8,
+            reorder_point=10,
+            reorder_amount=60,
+        )
+        response = self.client.get(
+            reverse(
+                "cantina:view", kwargs={"table": "inventory", "id": agave_nectar.id}
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/inventory_item.html")
+        self.assertContains(response, f"{agave_nectar.name} [Miscellaneous]")
+        self.assertContains(response, f"Stock: {agave_nectar.stock}")
+        self.assertContains(response, f"Cost: {agave_nectar.cost}")
+        self.assertContains(response, f"Reorder Point: {agave_nectar.reorder_point}")
+        self.assertContains(response, f"Reorder Amount: {agave_nectar.reorder_amount}")
