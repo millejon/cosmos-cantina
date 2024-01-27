@@ -269,3 +269,41 @@ class AllPurchaseViewTestCase(TestCase):
         purchase2 = make_purchase(tab=self.tab, item=self.item, quantity=2, amount=24)
         response = self.client.get(reverse("cantina:view_all", args=("purchases",)))
         self.assertQuerySetEqual(response.context["instances"], [purchase2, purchase1])
+
+
+class AllTabViewTestCase(TestCase):
+    def setUp(self):
+        create_customer(
+            last_name="Raccoon", first_name="Rocket", planet="Halfworld", uba=""
+        )
+        create_customer(last_name="Groot", first_name="", planet="Planet X", uba="")
+
+    def test_no_tabs(self):
+        """If no tabs exist, an appropriate message is displayed."""
+        response = self.client.get(reverse("cantina:view_all", args=("tabs",)))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/tabs.html")
+        self.assertContains(response, "No tabs are available.")
+        self.assertQuerySetEqual(response.context["instances"], [])
+
+    def test_single_tab(self):
+        """
+        The tabs page should display a single tab if only one tab is
+        added.
+        """
+        rocket_racoon = models.Customer.objects.get(last_name="Raccoon")
+        tab = create_tab(customer=rocket_racoon)
+        response = self.client.get(reverse("cantina:view_all", args=("tabs",)))
+        self.assertQuerySetEqual(response.context["instances"], [tab])
+
+    def test_multiple_tabs(self):
+        """
+        The tabs page should display multiple tabs sorted by the time
+        they were opened in descending order.
+        """
+        rocket_racoon = models.Customer.objects.get(last_name="Raccoon")
+        groot = models.Customer.objects.get(last_name="Groot")
+        tab1 = create_tab(customer=rocket_racoon)
+        tab2 = create_tab(customer=groot)
+        response = self.client.get(reverse("cantina:view_all", args=("tabs",)))
+        self.assertQuerySetEqual(response.context["instances"], [tab2, tab1])
