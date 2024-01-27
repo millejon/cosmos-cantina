@@ -215,6 +215,7 @@ class AllCustomersViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "customers"})
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/customers.html")
         self.assertContains(response, "No customers are available.")
@@ -234,6 +235,7 @@ class AllCustomersViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "customers"})
         )
+
         self.assertQuerySetEqual(response.context["instances"], [captain_marvel])
 
     def test_multiple_customers(self):
@@ -256,6 +258,7 @@ class AllCustomersViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "customers"})
         )
+
         self.assertQuerySetEqual(
             response.context["instances"], [beta_ray_bill, gladiator]
         )
@@ -273,6 +276,7 @@ class AllTabsViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "tabs"})
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/tabs.html")
         self.assertContains(response, "No tabs are available.")
@@ -288,6 +292,7 @@ class AllTabsViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "tabs"})
         )
+
         self.assertQuerySetEqual(response.context["instances"], [tab])
 
     def test_multiple_tabs(self):
@@ -302,6 +307,7 @@ class AllTabsViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "tabs"})
         )
+
         self.assertQuerySetEqual(response.context["instances"], [tab2, tab1])
 
 
@@ -322,6 +328,7 @@ class AllPurchasesViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "purchases"})
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/purchases.html")
         self.assertContains(response, "No purchases are available.")
@@ -336,6 +343,7 @@ class AllPurchasesViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "purchases"})
         )
+
         self.assertQuerySetEqual(response.context["instances"], [purchase])
 
     def test_multiple_purchases(self):
@@ -348,25 +356,27 @@ class AllPurchasesViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "purchases"})
         )
+
         self.assertQuerySetEqual(response.context["instances"], [purchase2, purchase1])
 
 
 class CustomerDetailsViewTestCase(TestCase):
-    def test_no_customers(self):
+    def test_customer_does_not_exist(self):
         """
-        If no customers exist, the detail view of a customer should
+        If the customer does not exist, the customer detail view should
         return a 404 status code.
         """
         response = self.client.get(
             reverse("cantina:view", kwargs={"table": "customers", "id": 1})
         )
+
         self.assertEqual(response.status_code, 404)
 
     def test_customer_with_no_uba(self):
         """
-        The detail view of a customer should display the customer
-        information. If a customer does not have a UBA number, the
-        field should not be present in the detail view of a customer.
+        The detail view of a customer should display information about
+        the customer. If a customer does not have a UBA number, the
+        field should not be present.
         """
         drax = create_customer(
             last_name="Douglas", first_name="Arthur", planet="Earth", uba=""
@@ -374,6 +384,7 @@ class CustomerDetailsViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view", kwargs={"table": "customers", "id": drax.id})
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/customer.html")
         self.assertContains(response, drax.last_name)
@@ -384,7 +395,7 @@ class CustomerDetailsViewTestCase(TestCase):
     def test_customer_with_uba_and_no_tabs(self):
         """
         If a customer has a UBA number, the detail view of a customer
-        should also displayed it with the rest of the customer
+        should display it along with the rest of the customer
         information. If the customer has not opened any tabs, there
         should be no 'Account History' section.
         """
@@ -397,15 +408,16 @@ class CustomerDetailsViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view", kwargs={"table": "customers", "id": black_bolt.id})
         )
+
         self.assertContains(response, "UBA")
         self.assertContains(response, black_bolt.uba)
         self.assertNotContains(response, "Account History")
 
     def test_customer_with_tabs(self):
         """
-        If the customer has opened tabs, the detail view for the
-        customer should list the closed tabs last in descending order
-        of when they were closed.
+        If the customer has open tabs, the detail view for the
+        customer should list the open tab, followed by the closed tabs
+        in descending order of when they were closed.
         """
         medusa = create_customer(
             last_name="Amaquelin",
@@ -425,6 +437,7 @@ class CustomerDetailsViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view", kwargs={"table": "customers", "id": medusa.id})
         )
+
         self.assertContains(response, "Account History")
         self.assertQuerySetEqual(medusa.tab_set.all(), [tab2, tab3, tab1])
 
@@ -444,26 +457,28 @@ class TabDetailsViewTestCase(TestCase):
 
     def test_no_tabs(self):
         """
-        If no tabs exist, the detail view of a tab should return a 404
-        status code.
+        If the tab does not exist, the tab detail view should return a
+        404 status code.
         """
         response = self.client.get(
             reverse("cantina:view", kwargs={"table": "tabs", "id": 1})
         )
+
         self.assertEqual(response.status_code, 404)
 
     def test_open_tab_with_no_purchases(self):
         """
-        The detail view of a tab should display the tab information. If
-        a tab is still open, the Due field should be present and the
-        Closed field should not be present in the detail view of a tab.
-        If the tab has no purchases assigned to it, then an appropriate
-        message should be displayed.
+        The detail view of a tab should display information about the
+        tab. If a tab is still open, the Due field should be present
+        and the Closed field should not be present. If the tab has no
+        purchases assigned to it, then an appropriate message should be
+        displayed.
         """
         tab = create_tab(customer=self.customer)
         response = self.client.get(
             reverse("cantina:view", kwargs={"table": "tabs", "id": tab.id})
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/tab.html")
         self.assertContains(response, tab.customer.name)
@@ -476,10 +491,10 @@ class TabDetailsViewTestCase(TestCase):
         """
         The detail view of a tab should display the tab information. If
         a tab is closed, the Closed field should be present and the
-        Due field should not be present in the detail view of a tab.
-        If the tab has purchases assigned to it, then the purchases
-        should be displayed in ascending order of when the purchases
-        were made. The total amount of the tab should also be displayed.
+        Due field should not be present. If the tab has purchases
+        assigned to it, then the purchases should be displayed in
+        ascending order of when the purchases were made. The total
+        amount of the tab should also be displayed.
         """
         tab = create_tab(
             customer=self.customer,
@@ -491,6 +506,7 @@ class TabDetailsViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view", kwargs={"table": "tabs", "id": tab.id})
         )
+
         self.assertContains(response, tab.opened.strftime("%Y-%m-%d %H:%M"))
         self.assertContains(response, tab.closed.strftime("%Y-%m-%d %H:%M"))
         self.assertNotContains(response, "Due")
@@ -508,6 +524,7 @@ class AllMenuCategoriesViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "menu"})
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/categories.html")
         self.assertContains(response, "<h1>Menu</h1>")
@@ -524,6 +541,7 @@ class AllMenuCategoriesViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "menu"})
         )
+
         self.assertQuerySetEqual(response.context["categories"], [beer, gin])
 
     def test_menu_category_no_inventory_categories(self):
@@ -535,6 +553,7 @@ class AllMenuCategoriesViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "inventory"})
         )
+
         self.assertNotContains(response, "Gin")
         self.assertQuerySetEqual(response.context["categories"], [])
 
@@ -549,6 +568,7 @@ class AllInventoryCategoriesViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "inventory"})
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/categories.html")
         self.assertContains(response, "<h1>Inventory</h1>")
@@ -567,6 +587,7 @@ class AllInventoryCategoriesViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "inventory"})
         )
+
         self.assertQuerySetEqual(
             response.context["categories"], [miscellaneous, tequila]
         )
@@ -580,6 +601,7 @@ class AllInventoryCategoriesViewTestCase(TestCase):
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "menu"})
         )
+
         self.assertNotContains(response, "Juice")
         self.assertQuerySetEqual(response.context["categories"], [])
 
@@ -599,6 +621,7 @@ class MenuCategoryViewTestCase(TestCase):
                 kwargs={"table": "menu", "id": self.category.id},
             )
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/menu.html")
         self.assertContains(response, "No cocktail is available.")
@@ -618,6 +641,7 @@ class MenuCategoryViewTestCase(TestCase):
                 kwargs={"table": "menu", "id": self.category.id},
             )
         )
+
         self.assertQuerySetEqual(response.context["instances"], [marvelous_manhattan])
 
     def test_multiple_menu_items(self):
@@ -637,6 +661,7 @@ class MenuCategoryViewTestCase(TestCase):
                 kwargs={"table": "menu", "id": self.category.id},
             )
         )
+
         self.assertQuerySetEqual(
             response.context["instances"], [kings_whisper, saber_fury]
         )
@@ -657,6 +682,7 @@ class InventoryCategoryViewTestCase(TestCase):
                 kwargs={"table": "inventory", "id": self.category.id},
             )
         )
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/inventory.html")
         self.assertContains(response, "No juice is available.")
@@ -681,6 +707,7 @@ class InventoryCategoryViewTestCase(TestCase):
                 kwargs={"table": "inventory", "id": self.category.id},
             )
         )
+
         self.assertQuerySetEqual(response.context["instances"], [lime_juice])
 
     def test_multiple_inventory_items(self):
@@ -710,6 +737,88 @@ class InventoryCategoryViewTestCase(TestCase):
                 kwargs={"table": "inventory", "id": self.category.id},
             )
         )
+
         self.assertQuerySetEqual(
             response.context["instances"], [lemon_juice, orange_juice]
+        )
+
+
+class MenuItemDetailsViewTestCase(TestCase):
+    def setUp(self):
+        self.category = models.MenuItemCategory.objects.create(name="Cocktail")
+
+    def test_no_menu_item(self):
+        """
+        If the menu item does not exist, the menu item detail view
+        should return a 404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:view", kwargs={"table": "menu", "id": 1})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_menu_item_with_no_components(self):
+        """
+        The detail view of a menu item should display information about
+        the menu item. If no components have been added, an appropriate
+        message should be displayed.
+        """
+        multiversal_madness = create_menu_item(
+            name="Multiversal Madness", category=self.category, price=16
+        )
+        response = self.client.get(
+            reverse(
+                "cantina:view", kwargs={"table": "menu", "id": multiversal_madness.id}
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/menu_item.html")
+        self.assertContains(response, f"{multiversal_madness.name} [Cocktail]")
+        self.assertContains(response, f"Price: {multiversal_madness.price}")
+        self.assertContains(response, "No components have been added.")
+
+    def test_menu_item_with_components(self):
+        """
+        If the menu item has components, the detail view of the item
+        should list the components alphabetically and the amount
+        required of each component.
+        """
+        multiversal_madness = create_menu_item(
+            name="Multiversal Madness", category=self.category, price=16
+        )
+        tequila = models.InventoryItemCategory.objects.create(name="Tequila")
+        kirby = models.InventoryItem.objects.create(
+            name="Kirby Tequila",
+            category=tequila,
+            stock=100,
+            cost=80,
+            reorder_point=10,
+            reorder_amount=60,
+        )
+        juice = models.InventoryItemCategory.objects.create(name="Juice")
+        lime_juice = models.InventoryItem.objects.create(
+            name="Lime Juice",
+            category=juice,
+            stock=200,
+            cost=5,
+            reorder_point=50,
+            reorder_amount=150,
+        )
+        component1 = models.Component.objects.create(
+            item=multiversal_madness, ingredient=kirby, amount=2
+        )
+        component2 = models.Component.objects.create(
+            item=multiversal_madness, ingredient=lime_juice, amount=1
+        )
+        response = self.client.get(
+            reverse(
+                "cantina:view", kwargs={"table": "menu", "id": multiversal_madness.id}
+            )
+        )
+
+        self.assertContains(response, "oz.")
+        self.assertQuerySetEqual(
+            multiversal_madness.component_set.all(), [component1, component2]
         )
