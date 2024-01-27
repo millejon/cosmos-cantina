@@ -2,76 +2,34 @@ from django.test import TestCase
 from django.urls import reverse
 from datetime import datetime
 
-from . import models
-
-
-def create_customer(
-    last_name: str, planet: str, first_name: str = None, uba: str = None
-) -> models.Customer:
-    """Create a customer."""
-    return models.Customer.objects.create(
-        last_name=last_name, first_name=first_name, planet=planet, uba=uba
-    )
-
-
-def create_menu_item(
-    name: str, category: models.MenuItemCategory, price: int
-) -> models.MenuItem:
-    """Create a menu item."""
-    return models.MenuItem.objects.create(name=name, category=category, price=price)
-
-
-def create_inventory_item(
-    name: str,
-    category: models.InventoryItemCategory,
-    stock: int,
-    cost: int,
-    reorder_point: int,
-    reorder_amount: int,
-) -> models.InventoryItem:
-    """Create an inventory item."""
-    return models.InventoryItem.objects.create(
-        name=name,
-        category=category,
-        stock=stock,
-        cost=cost,
-        reorder_point=reorder_point,
-        reorder_amount=reorder_amount,
-    )
-
-
-def create_tab(customer: models.Customer, closed: datetime = None) -> models.Tab:
-    """Create a tab assigned to the customer passed."""
-    return models.Tab.objects.create(customer=customer, closed=closed)
-
-
-def make_purchase(
-    tab: models.Tab, item: models.MenuItem, quantity: int, amount: int
-) -> models.Purchase:
-    """Create a purchase assigned to the tab passed."""
-    return models.Purchase.objects.create(
-        tab=tab, item=item, quantity=quantity, amount=amount
-    )
+from .models import (
+    Customer,
+    Tab,
+    Purchase,
+    MenuItemCategory,
+    MenuItem,
+    InventoryItemCategory,
+    InventoryItem,
+    Component,
+)
 
 
 class CustomerTestCase(TestCase):
-    def setUp(self):
-        create_customer(
-            last_name="Radd",
-            first_name="Norrin",
-            planet="Zenn-La",
-            uba="OHCMSZ9QF928JZNS4H20IKXP",
-        )
-        create_customer(last_name="Galactus", first_name="", planet="Galan", uba="")
-
     def test_customer_names(self):
         """
         The name attribute of the Customer model should return the
         customer's full name, whether the customer has a first name or
         not.
         """
-        silver_surfer = models.Customer.objects.get(last_name="Radd")
-        galactus = models.Customer.objects.get(last_name="Galactus")
+        silver_surfer = Customer.objects.create(
+            last_name="Radd",
+            first_name="Norrin",
+            planet="Zenn-La",
+            uba="OHCMSZ9QF928JZNS4H20IKXP",
+        )
+        galactus = Customer.objects.create(
+            last_name="Galactus", first_name="", planet="Galan", uba=""
+        )
 
         self.assertEqual(silver_surfer.name, "Norrin Radd")
         self.assertEqual(galactus.name, "Galactus")
@@ -79,12 +37,14 @@ class CustomerTestCase(TestCase):
 
 class TabTestCase(TestCase):
     def setUp(self):
-        customer = create_customer(
+        customer = Customer.objects.create(
             last_name="Thanos", first_name="", planet="Titan", uba=""
         )
-        self.tab = create_tab(customer=customer)
-        category = models.MenuItemCategory.objects.create(name="Beer")
-        self.item = create_menu_item(name="Duff Beer", category=category, price=5)
+        self.tab = Tab.objects.create(customer=customer)
+        category = MenuItemCategory.objects.create(name="Beer")
+        self.item = MenuItem.objects.create(
+            name="Duff Beer", category=category, price=5
+        )
 
     def test_tab_get_purchases_with_single_purchase(self):
         """
@@ -92,7 +52,7 @@ class TabTestCase(TestCase):
         number of purchases assigned to the tab. A tab with a single
         purchase should return 1.
         """
-        make_purchase(tab=self.tab, item=self.item, quantity=2, amount=10)
+        Purchase.objects.create(tab=self.tab, item=self.item, quantity=2, amount=10)
 
         self.assertEqual(len(self.tab.get_purchases()), 1)
 
@@ -103,7 +63,7 @@ class TabTestCase(TestCase):
         purchases should return 5.
         """
         for _ in range(5):
-            make_purchase(tab=self.tab, item=self.item, quantity=2, amount=10)
+            Purchase.objects.create(tab=self.tab, item=self.item, quantity=2, amount=10)
 
         self.assertEqual(len(self.tab.get_purchases()), 5)
 
@@ -120,7 +80,7 @@ class TabTestCase(TestCase):
         The get_amount method of the Tab model should return the total
         price of all purchases assigned to the tab.
         """
-        make_purchase(tab=self.tab, item=self.item, quantity=3, amount=15)
+        Purchase.objects.create(tab=self.tab, item=self.item, quantity=3, amount=15)
 
         self.assertEqual(self.tab.get_amount(), 15)
 
@@ -130,7 +90,7 @@ class TabTestCase(TestCase):
         price of all purchases assigned to the tab.
         """
         for _ in range(5):
-            make_purchase(tab=self.tab, item=self.item, quantity=4, amount=20)
+            Purchase.objects.create(tab=self.tab, item=self.item, quantity=4, amount=20)
 
         self.assertEqual(self.tab.get_amount(), 100)
 
@@ -149,7 +109,7 @@ class TabTestCase(TestCase):
         after a purchase is comped should be updated accordingly.
         """
         for _ in range(5):
-            make_purchase(tab=self.tab, item=self.item, quantity=2, amount=10)
+            Purchase.objects.create(tab=self.tab, item=self.item, quantity=2, amount=10)
 
         self.assertEqual(self.tab.get_amount(), 50)
 
@@ -162,13 +122,15 @@ class TabTestCase(TestCase):
 
 class PurchaseTestCase(TestCase):
     def setUp(self):
-        customer = create_customer(
+        customer = Customer.objects.create(
             last_name="Quill", first_name="Peter", planet="Earth", uba=""
         )
-        tab = create_tab(customer=customer)
-        category = models.MenuItemCategory.objects.create(name="Wine")
-        item = create_menu_item(name="Shi'ar Sake", category=category, price=7)
-        self.purchase = make_purchase(tab=tab, item=item, quantity=2, amount=14)
+        tab = Tab.objects.create(customer=customer)
+        category = MenuItemCategory.objects.create(name="Wine")
+        item = MenuItem.objects.create(name="Shi'ar Sake", category=category, price=7)
+        self.purchase = Purchase.objects.create(
+            tab=tab, item=item, quantity=2, amount=14
+        )
 
     def test_purchase_update_amount_with_change_to_quantity(self):
         """
@@ -226,7 +188,7 @@ class AllCustomersViewTestCase(TestCase):
         The customers page should display a single customer if only one
         customer is added.
         """
-        captain_marvel = create_customer(
+        captain_marvel = Customer.objects.create(
             last_name="Mar-Vell",
             first_name="",
             planet="Kree-Lar",
@@ -243,13 +205,13 @@ class AllCustomersViewTestCase(TestCase):
         The customers page should display multiple customers sorted by
         their last name.
         """
-        gladiator = create_customer(
+        gladiator = Customer.objects.create(
             last_name="Kallark",
             first_name="",
             planet="Strontia",
             uba="Y551W20W1AEMKJYRUP53THER",
         )
-        beta_ray_bill = create_customer(
+        beta_ray_bill = Customer.objects.create(
             last_name="Bill",
             first_name="Beta Ray",
             planet="Korbin",
@@ -266,10 +228,12 @@ class AllCustomersViewTestCase(TestCase):
 
 class AllTabsViewTestCase(TestCase):
     def setUp(self):
-        create_customer(
+        Customer.objects.create(
             last_name="Raccoon", first_name="Rocket", planet="Halfworld", uba=""
         )
-        create_customer(last_name="Groot", first_name="", planet="Planet X", uba="")
+        Customer.objects.create(
+            last_name="Groot", first_name="", planet="Planet X", uba=""
+        )
 
     def test_no_tabs(self):
         """If no tabs exist, an appropriate message should be displayed."""
@@ -287,8 +251,8 @@ class AllTabsViewTestCase(TestCase):
         The tabs page should display a single tab if only one tab is
         added.
         """
-        rocket_racoon = models.Customer.objects.get(last_name="Raccoon")
-        tab = create_tab(customer=rocket_racoon)
+        rocket_racoon = Customer.objects.get(last_name="Raccoon")
+        tab = Tab.objects.create(customer=rocket_racoon)
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "tabs"})
         )
@@ -300,10 +264,10 @@ class AllTabsViewTestCase(TestCase):
         The tabs page should display multiple tabs sorted by the time
         they were opened in descending order.
         """
-        rocket_racoon = models.Customer.objects.get(last_name="Raccoon")
-        groot = models.Customer.objects.get(last_name="Groot")
-        tab1 = create_tab(customer=rocket_racoon)
-        tab2 = create_tab(customer=groot)
+        rocket_racoon = Customer.objects.get(last_name="Raccoon")
+        groot = Customer.objects.get(last_name="Groot")
+        tab1 = Tab.objects.create(customer=rocket_racoon)
+        tab2 = Tab.objects.create(customer=groot)
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "tabs"})
         )
@@ -313,12 +277,14 @@ class AllTabsViewTestCase(TestCase):
 
 class AllPurchasesViewTestCase(TestCase):
     def setUp(self):
-        customer = create_customer(
+        customer = Customer.objects.create(
             last_name="Titan", first_name="Gamora", planet="Zen-Whoberi", uba=""
         )
-        self.tab = create_tab(customer=customer)
-        cocktail = models.MenuItemCategory.objects.create(name="Cocktail")
-        self.item = create_menu_item(name="Infinity Watch", category=cocktail, price=12)
+        self.tab = Tab.objects.create(customer=customer)
+        cocktail = MenuItemCategory.objects.create(name="Cocktail")
+        self.item = MenuItem.objects.create(
+            name="Infinity Watch", category=cocktail, price=12
+        )
 
     def test_no_purchases(self):
         """
@@ -339,7 +305,9 @@ class AllPurchasesViewTestCase(TestCase):
         The purchases page should display a single purchase if only one
         purchase is added.
         """
-        purchase = make_purchase(tab=self.tab, item=self.item, quantity=1, amount=12)
+        purchase = Purchase.objects.create(
+            tab=self.tab, item=self.item, quantity=1, amount=12
+        )
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "purchases"})
         )
@@ -351,8 +319,12 @@ class AllPurchasesViewTestCase(TestCase):
         The purchases page should display multiple purchases sorted by
         the time they were made in descending order.
         """
-        purchase1 = make_purchase(tab=self.tab, item=self.item, quantity=3, amount=36)
-        purchase2 = make_purchase(tab=self.tab, item=self.item, quantity=2, amount=24)
+        purchase1 = Purchase.objects.create(
+            tab=self.tab, item=self.item, quantity=3, amount=36
+        )
+        purchase2 = Purchase.objects.create(
+            tab=self.tab, item=self.item, quantity=2, amount=24
+        )
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "purchases"})
         )
@@ -378,7 +350,7 @@ class CustomerDetailsViewTestCase(TestCase):
         the customer. If a customer does not have a UBA number, the
         field should not be present.
         """
-        drax = create_customer(
+        drax = Customer.objects.create(
             last_name="Douglas", first_name="Arthur", planet="Earth", uba=""
         )
         response = self.client.get(
@@ -399,7 +371,7 @@ class CustomerDetailsViewTestCase(TestCase):
         information. If the customer has not opened any tabs, there
         should be no 'Account History' section.
         """
-        black_bolt = create_customer(
+        black_bolt = Customer.objects.create(
             last_name="Boltagon",
             first_name="Blackagar",
             planet="Attilan",
@@ -419,18 +391,18 @@ class CustomerDetailsViewTestCase(TestCase):
         customer should list the open tab, followed by the closed tabs
         in descending order of when they were closed.
         """
-        medusa = create_customer(
+        medusa = Customer.objects.create(
             last_name="Amaquelin",
             first_name="Medusalith",
             planet="Attilan",
             uba="KLVREX6N766S014EN01CELID",
         )
-        tab1 = create_tab(
+        tab1 = Tab.objects.create(
             customer=medusa,
             closed=datetime(year=2023, month=12, day=26, hour=19, minute=20, second=14),
         )
-        tab2 = create_tab(customer=medusa)
-        tab3 = create_tab(
+        tab2 = Tab.objects.create(customer=medusa)
+        tab3 = Tab.objects.create(
             customer=medusa,
             closed=datetime(year=2024, month=1, day=1, hour=0, minute=0, second=1),
         )
@@ -444,14 +416,14 @@ class CustomerDetailsViewTestCase(TestCase):
 
 class TabDetailsViewTestCase(TestCase):
     def setUp(self):
-        self.customer = create_customer(
+        self.customer = Customer.objects.create(
             last_name="Summers",
             first_name="Gabriel",
             planet="Chandilar",
             uba="P86KIIMSJRG5AMPEPZ16A1ZO",
         )
-        wine = models.MenuItemCategory.objects.create(name="Wine")
-        self.item = create_menu_item(
+        wine = MenuItemCategory.objects.create(name="Wine")
+        self.item = MenuItem.objects.create(
             name="Skrull Vineyards Pinot Noir", category=wine, price=6
         )
 
@@ -474,7 +446,7 @@ class TabDetailsViewTestCase(TestCase):
         purchases assigned to it, then an appropriate message should be
         displayed.
         """
-        tab = create_tab(customer=self.customer)
+        tab = Tab.objects.create(customer=self.customer)
         response = self.client.get(
             reverse("cantina:view", kwargs={"table": "tabs", "id": tab.id})
         )
@@ -496,13 +468,19 @@ class TabDetailsViewTestCase(TestCase):
         ascending order of when the purchases were made. The total
         amount of the tab should also be displayed.
         """
-        tab = create_tab(
+        tab = Tab.objects.create(
             customer=self.customer,
             closed=datetime(year=1993, month=9, day=3, hour=6, minute=10, second=32),
         )
-        purchase1 = make_purchase(tab=tab, item=self.item, quantity=1, amount=6)
-        purchase2 = make_purchase(tab=tab, item=self.item, quantity=2, amount=12)
-        purchase3 = make_purchase(tab=tab, item=self.item, quantity=5, amount=30)
+        purchase1 = Purchase.objects.create(
+            tab=tab, item=self.item, quantity=1, amount=6
+        )
+        purchase2 = Purchase.objects.create(
+            tab=tab, item=self.item, quantity=2, amount=12
+        )
+        purchase3 = Purchase.objects.create(
+            tab=tab, item=self.item, quantity=5, amount=30
+        )
         response = self.client.get(
             reverse("cantina:view", kwargs={"table": "tabs", "id": tab.id})
         )
@@ -520,7 +498,7 @@ class AllMenuCategoriesViewTestCase(TestCase):
         The menu categories page should display a single category if
         only one category is added.
         """
-        gin = models.MenuItemCategory.objects.create(name="Gin")
+        gin = MenuItemCategory.objects.create(name="Gin")
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "menu"})
         )
@@ -536,8 +514,8 @@ class AllMenuCategoriesViewTestCase(TestCase):
         The menu categories page should display multiple categories
         sorted alphabetically.
         """
-        gin = models.MenuItemCategory.objects.create(name="Gin")
-        beer = models.MenuItemCategory.objects.create(name="Beer")
+        gin = MenuItemCategory.objects.create(name="Gin")
+        beer = MenuItemCategory.objects.create(name="Beer")
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "menu"})
         )
@@ -549,7 +527,7 @@ class AllMenuCategoriesViewTestCase(TestCase):
         A menu category should not show up on the inventory categories
         page.
         """
-        models.MenuItemCategory.objects.create(name="Gin")
+        MenuItemCategory.objects.create(name="Gin")
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "inventory"})
         )
@@ -564,7 +542,7 @@ class AllInventoryCategoriesViewTestCase(TestCase):
         The inventory categories page should display a single category
         if only one category is added.
         """
-        vodka = models.InventoryItemCategory.objects.create(name="Vodka")
+        vodka = InventoryItemCategory.objects.create(name="Vodka")
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "inventory"})
         )
@@ -580,10 +558,8 @@ class AllInventoryCategoriesViewTestCase(TestCase):
         The inventory categories page should display multiple categories
         sorted alphabetically.
         """
-        tequila = models.InventoryItemCategory.objects.create(name="Tequila")
-        miscellaneous = models.InventoryItemCategory.objects.create(
-            name="Miscellaneous"
-        )
+        tequila = InventoryItemCategory.objects.create(name="Tequila")
+        miscellaneous = InventoryItemCategory.objects.create(name="Miscellaneous")
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "inventory"})
         )
@@ -597,7 +573,7 @@ class AllInventoryCategoriesViewTestCase(TestCase):
         An inventory category should not show up on the menu categories
         page.
         """
-        models.InventoryItemCategory.objects.create(name="Juice")
+        InventoryItemCategory.objects.create(name="Juice")
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "menu"})
         )
@@ -608,7 +584,7 @@ class AllInventoryCategoriesViewTestCase(TestCase):
 
 class MenuCategoryViewTestCase(TestCase):
     def setUp(self):
-        self.category = models.MenuItemCategory.objects.create(name="Cocktail")
+        self.category = MenuItemCategory.objects.create(name="Cocktail")
 
     def test_no_menu_items(self):
         """
@@ -632,7 +608,7 @@ class MenuCategoryViewTestCase(TestCase):
         The menu category should display a single item if only one item
         is added.
         """
-        marvelous_manhattan = create_menu_item(
+        marvelous_manhattan = MenuItem.objects.create(
             name="Marvelous Manhattan", category=self.category, price=11
         )
         response = self.client.get(
@@ -649,10 +625,10 @@ class MenuCategoryViewTestCase(TestCase):
         The menu category should display multiple items sorted
         alphabetically.
         """
-        saber_fury = create_menu_item(
+        saber_fury = MenuItem.objects.create(
             name="S.A.B.E.R. Fury", category=self.category, price=13
         )
-        kings_whisper = create_menu_item(
+        kings_whisper = MenuItem.objects.create(
             name="King's Whisper", category=self.category, price=12
         )
         response = self.client.get(
@@ -669,7 +645,7 @@ class MenuCategoryViewTestCase(TestCase):
 
 class InventoryCategoryViewTestCase(TestCase):
     def setUp(self):
-        self.category = models.InventoryItemCategory.objects.create(name="Juice")
+        self.category = InventoryItemCategory.objects.create(name="Juice")
 
     def test_no_inventory_items(self):
         """
@@ -693,7 +669,7 @@ class InventoryCategoryViewTestCase(TestCase):
         The inventory category should display a single item if only one
         item is added.
         """
-        lime_juice = create_inventory_item(
+        lime_juice = InventoryItem.objects.create(
             name="Lime Juice",
             category=self.category,
             stock=10,
@@ -715,7 +691,7 @@ class InventoryCategoryViewTestCase(TestCase):
         The inventory category should display multiple items sorted
         alphabetically.
         """
-        lemon_juice = create_inventory_item(
+        lemon_juice = InventoryItem.objects.create(
             name="Lemon Juice",
             category=self.category,
             stock=6,
@@ -723,7 +699,7 @@ class InventoryCategoryViewTestCase(TestCase):
             reorder_point=2,
             reorder_amount=10,
         )
-        orange_juice = create_inventory_item(
+        orange_juice = InventoryItem.objects.create(
             name="Orange Juice",
             category=self.category,
             stock=15,
@@ -745,7 +721,7 @@ class InventoryCategoryViewTestCase(TestCase):
 
 class MenuItemDetailsViewTestCase(TestCase):
     def setUp(self):
-        self.category = models.MenuItemCategory.objects.create(name="Cocktail")
+        self.category = MenuItemCategory.objects.create(name="Cocktail")
 
     def test_no_menu_item(self):
         """
@@ -764,7 +740,7 @@ class MenuItemDetailsViewTestCase(TestCase):
         the menu item. If no components have been added, an appropriate
         message should be displayed.
         """
-        multiversal_madness = create_menu_item(
+        multiversal_madness = MenuItem.objects.create(
             name="Multiversal Madness", category=self.category, price=16
         )
         response = self.client.get(
@@ -785,11 +761,11 @@ class MenuItemDetailsViewTestCase(TestCase):
         should list the components alphabetically and the amount
         required of each component.
         """
-        multiversal_madness = create_menu_item(
+        multiversal_madness = MenuItem.objects.create(
             name="Multiversal Madness", category=self.category, price=16
         )
-        tequila = models.InventoryItemCategory.objects.create(name="Tequila")
-        kirby = models.InventoryItem.objects.create(
+        tequila = InventoryItemCategory.objects.create(name="Tequila")
+        kirby = InventoryItem.objects.create(
             name="Kirby Tequila",
             category=tequila,
             stock=100,
@@ -797,8 +773,8 @@ class MenuItemDetailsViewTestCase(TestCase):
             reorder_point=10,
             reorder_amount=60,
         )
-        juice = models.InventoryItemCategory.objects.create(name="Juice")
-        lime_juice = models.InventoryItem.objects.create(
+        juice = InventoryItemCategory.objects.create(name="Juice")
+        lime_juice = InventoryItem.objects.create(
             name="Lime Juice",
             category=juice,
             stock=200,
@@ -806,10 +782,10 @@ class MenuItemDetailsViewTestCase(TestCase):
             reorder_point=50,
             reorder_amount=150,
         )
-        component1 = models.Component.objects.create(
+        component1 = Component.objects.create(
             item=multiversal_madness, ingredient=kirby, amount=2
         )
-        component2 = models.Component.objects.create(
+        component2 = Component.objects.create(
             item=multiversal_madness, ingredient=lime_juice, amount=1
         )
         response = self.client.get(
@@ -826,9 +802,7 @@ class MenuItemDetailsViewTestCase(TestCase):
 
 class InventoryItemDetailsViewTestCase(TestCase):
     def setUp(self):
-        self.category = models.InventoryItemCategory.objects.create(
-            name="Miscellaneous"
-        )
+        self.category = InventoryItemCategory.objects.create(name="Miscellaneous")
 
     def test_no_inventory_item(self):
         """
@@ -846,7 +820,7 @@ class InventoryItemDetailsViewTestCase(TestCase):
         The detail view of an inventory item should display information
         about the inventory item.
         """
-        agave_nectar = create_inventory_item(
+        agave_nectar = InventoryItem.objects.create(
             name="Agave Nectar",
             category=self.category,
             stock=100,
@@ -867,3 +841,7 @@ class InventoryItemDetailsViewTestCase(TestCase):
         self.assertContains(response, f"Cost: {agave_nectar.cost}")
         self.assertContains(response, f"Reorder Point: {agave_nectar.reorder_point}")
         self.assertContains(response, f"Reorder Amount: {agave_nectar.reorder_amount}")
+
+
+class AddCustomerViewTestCase(TestCase):
+    pass
