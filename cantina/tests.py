@@ -184,7 +184,7 @@ class PurchaseTestCase(TestCase):
         self.assertEqual(self.purchase.amount, 0)
 
 
-class AllCustomerViewTestCase(TestCase):
+class AllCustomersViewTestCase(TestCase):
     def test_no_customers(self):
         """
         If no customers exist, an appropriate message should be
@@ -239,7 +239,7 @@ class AllCustomerViewTestCase(TestCase):
         )
 
 
-class AllTabViewTestCase(TestCase):
+class AllTabsViewTestCase(TestCase):
     def setUp(self):
         create_customer(
             last_name="Raccoon", first_name="Rocket", planet="Halfworld", uba=""
@@ -283,7 +283,7 @@ class AllTabViewTestCase(TestCase):
         self.assertQuerySetEqual(response.context["instances"], [tab2, tab1])
 
 
-class AllPurchaseViewTestCase(TestCase):
+class AllPurchasesViewTestCase(TestCase):
     def setUp(self):
         customer = create_customer(
             last_name="Titan", first_name="Gamora", planet="Zen-Whoberi", uba=""
@@ -330,7 +330,7 @@ class AllPurchaseViewTestCase(TestCase):
         self.assertQuerySetEqual(response.context["instances"], [purchase2, purchase1])
 
 
-class CustomerDetailsTestCase(TestCase):
+class CustomerDetailsViewTestCase(TestCase):
     def test_no_customers(self):
         """
         If no customers exist, the detail view of a customer should
@@ -408,7 +408,7 @@ class CustomerDetailsTestCase(TestCase):
         self.assertQuerySetEqual(medusa.tab_set.all(), [tab2, tab3, tab1])
 
 
-class TabDetailsTestCase(TestCase):
+class TabDetailsViewTestCase(TestCase):
     def setUp(self):
         self.customer = create_customer(
             last_name="Summers",
@@ -474,3 +474,83 @@ class TabDetailsTestCase(TestCase):
         self.assertNotContains(response, "Due")
         self.assertQuerySetEqual(tab.get_purchases(), [purchase1, purchase2, purchase3])
         self.assertContains(response, "Total: 48.00 credits")
+
+
+class AllCategoriesViewTestCase(TestCase):
+    def test_single_menu_category(self):
+        """
+        The menu categories page should display a single category if
+        only one category is added.
+        """
+        category = models.MenuItemCategory.objects.create(name="Gin")
+        response = self.client.get(
+            reverse("cantina:view_categories", kwargs={"table": "menu"})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/categories.html")
+        self.assertContains(response, "<h1>Menu</h1>")
+        self.assertQuerySetEqual(response.context["categories"], [category])
+        self.assertContains(response, "Gin")
+
+    def test_multiple_menu_categories(self):
+        """
+        The menu categories page should display multiple categories
+        sorted alphabetically.
+        """
+        category1 = models.MenuItemCategory.objects.create(name="Gin")
+        category2 = models.MenuItemCategory.objects.create(name="Beer")
+        response = self.client.get(
+            reverse("cantina:view_categories", kwargs={"table": "menu"})
+        )
+        self.assertQuerySetEqual(response.context["categories"], [category2, category1])
+
+    def test_menu_category_no_inventory_categories(self):
+        """
+        A menu category should not show up on the inventory categories
+        page.
+        """
+        models.MenuItemCategory.objects.create(name="Gin")
+        response = self.client.get(
+            reverse("cantina:view_categories", kwargs={"table": "inventory"})
+        )
+        self.assertNotContains(response, "Gin")
+        self.assertQuerySetEqual(response.context["categories"], [])
+
+    def test_single_inventory_category(self):
+        """
+        The inventory categories page should display a single category
+        if only one category is added.
+        """
+        category = models.InventoryItemCategory.objects.create(name="Juice")
+        response = self.client.get(
+            reverse("cantina:view_categories", kwargs={"table": "inventory"})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/categories.html")
+        self.assertContains(response, "<h1>Inventory</h1>")
+        self.assertQuerySetEqual(response.context["categories"], [category])
+        self.assertContains(response, "Juice")
+
+    def test_multiple_inventory_categories(self):
+        """
+        The inventory categories page should display multiple categories
+        sorted alphabetically.
+        """
+        category1 = models.InventoryItemCategory.objects.create(name="Tequila")
+        category2 = models.InventoryItemCategory.objects.create(name="Miscellaneous")
+        response = self.client.get(
+            reverse("cantina:view_categories", kwargs={"table": "inventory"})
+        )
+        self.assertQuerySetEqual(response.context["categories"], [category2, category1])
+
+    def test_inventory_category_no_menu_categories(self):
+        """
+        An inventory category should not show up on the menu categories
+        page.
+        """
+        models.InventoryItemCategory.objects.create(name="Juice")
+        response = self.client.get(
+            reverse("cantina:view_categories", kwargs={"table": "menu"})
+        )
+        self.assertNotContains(response, "Juice")
+        self.assertQuerySetEqual(response.context["categories"], [])
