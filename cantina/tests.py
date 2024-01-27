@@ -229,3 +229,43 @@ class AllCustomerViewTestCase(TestCase):
         self.assertQuerySetEqual(
             response.context["instances"], [beta_ray_bill, gladiator]
         )
+
+
+class AllPurchaseViewTestCase(TestCase):
+    def setUp(self):
+        customer = create_customer(
+            last_name="Titan", first_name="Gamora", planet="Zen-Whoberi", uba=""
+        )
+        self.tab = create_tab(customer=customer)
+        self.item = create_menu_item(
+            name="Infinity Watch", category="Cocktail", price=12
+        )
+
+    def test_no_purchases(self):
+        """
+        If no purchases exist, an appropriate message is displayed.
+        """
+        response = self.client.get(reverse("cantina:view_all", args=("purchases",)))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/purchases.html")
+        self.assertContains(response, "No purchases are available.")
+        self.assertQuerySetEqual(response.context["instances"], [])
+
+    def test_single_purchase(self):
+        """
+        The purchases page should display a single purchase if only one
+        purchase is added.
+        """
+        purchase = make_purchase(tab=self.tab, item=self.item, quantity=1, amount=12)
+        response = self.client.get(reverse("cantina:view_all", args=("purchases",)))
+        self.assertQuerySetEqual(response.context["instances"], [purchase])
+
+    def test_multiple_purchases(self):
+        """
+        The purchases page should display multiple purchases sorted by
+        the time they were made in descending order.
+        """
+        purchase1 = make_purchase(tab=self.tab, item=self.item, quantity=3, amount=36)
+        purchase2 = make_purchase(tab=self.tab, item=self.item, quantity=2, amount=24)
+        response = self.client.get(reverse("cantina:view_all", args=("purchases",)))
+        self.assertQuerySetEqual(response.context["instances"], [purchase2, purchase1])
