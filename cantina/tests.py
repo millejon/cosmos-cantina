@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.urls import reverse
 
 from . import models
 
@@ -143,20 +144,20 @@ class PurchaseTestCase(TestCase):
             last_name="Quill", first_name="Peter", planet="Earth", uba=""
         )
         tab = create_tab(customer=customer)
-        item = create_menu_item(name="Duff Beer", category="Beer", price=5)
-        self.purchase = make_purchase(tab=tab, item=item, quantity=2, amount=10)
+        item = create_menu_item(name="Shi'ar Sake", category="Wine", price=7)
+        self.purchase = make_purchase(tab=tab, item=item, quantity=2, amount=14)
 
     def test_purchase_update_amount_with_change_to_quantity(self):
         """
         The update_amount method of the Purchase model should update
         the amount of the purchase according to changes in quantity.
         """
-        self.assertEqual(self.purchase.amount, 10)
+        self.assertEqual(self.purchase.amount, 14)
 
         self.purchase.quantity = 4  # Original quantity was 2.
         self.purchase.update_amount()
 
-        self.assertEqual(self.purchase.amount, 20)
+        self.assertEqual(self.purchase.amount, 28)
 
     def test_purchase_update_amount_with_no_changes(self):
         """
@@ -164,19 +165,67 @@ class PurchaseTestCase(TestCase):
         the amount of the purchase according to changes in quantity. If
         nothing has changed, then the amount should not be affected.
         """
-        self.assertEqual(self.purchase.amount, 10)
+        self.assertEqual(self.purchase.amount, 14)
 
         self.purchase.update_amount()
 
-        self.assertEqual(self.purchase.amount, 10)
+        self.assertEqual(self.purchase.amount, 14)
 
     def test_purchase_comp(self):
         """
         The comp method of the Purchase model should update the amount
         of the purchase to 0.
         """
-        self.assertEqual(self.purchase.amount, 10)
+        self.assertEqual(self.purchase.amount, 14)
 
         self.purchase.comp()
 
         self.assertEqual(self.purchase.amount, 0)
+
+
+class AllCustomerViewTestCase(TestCase):
+    def test_no_customers(self):
+        """
+        If no customers exist, an appropriate message is displayed.
+        """
+        response = self.client.get(reverse("cantina:view_all", args=("customers",)))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/customers.html")
+        self.assertContains(response, "No customers are available.")
+        self.assertQuerySetEqual(response.context["instances"], [])
+
+    def test_single_customer(self):
+        """
+        The customers page should display a single customer if only one
+        customer is added.
+        """
+        captain_marvel = create_customer(
+            last_name="Mar-Vell",
+            first_name="",
+            planet="Kree-Lar",
+            uba="G66P171OPBQA90AJBT9T22HO",
+        )
+        response = self.client.get(reverse("cantina:view_all", args=("customers",)))
+        self.assertQuerySetEqual(response.context["instances"], [captain_marvel])
+
+    def test_multiple_customers(self):
+        """
+        The customers page should display multiple customers sorted by
+        their last name.
+        """
+        gladiator = create_customer(
+            last_name="Kallark",
+            first_name="",
+            planet="Strontia",
+            uba="Y551W20W1AEMKJYRUP53THER",
+        )
+        beta_ray_bill = create_customer(
+            last_name="Bill",
+            first_name="Beta Ray",
+            planet="Korbin",
+            uba="KRAYCABNAU123FLNO3R77M8B",
+        )
+        response = self.client.get(reverse("cantina:view_all", args=("customers",)))
+        self.assertQuerySetEqual(
+            response.context["instances"], [beta_ray_bill, gladiator]
+        )
