@@ -14,10 +14,30 @@ def create_customer(
     )
 
 
-def create_menu_item(name: str, category: str, price: int) -> models.MenuItem:
-    """Create a menu item for use in purchases."""
-    category = models.MenuItemCategory.objects.create(name=category)
+def create_menu_item(
+    name: str, category: models.MenuItemCategory, price: int
+) -> models.MenuItem:
+    """Create a menu item."""
     return models.MenuItem.objects.create(name=name, category=category, price=price)
+
+
+def create_inventory_item(
+    name: str,
+    category: models.InventoryItemCategory,
+    stock: int,
+    cost: int,
+    reorder_point: int,
+    reorder_amount: int,
+) -> models.InventoryItem:
+    """Create an inventory item."""
+    return models.InventoryItem.objects.create(
+        name=name,
+        category=category,
+        stock=stock,
+        cost=cost,
+        reorder_point=reorder_point,
+        reorder_amount=reorder_amount,
+    )
 
 
 def create_tab(customer: models.Customer, closed: datetime = None) -> models.Tab:
@@ -63,7 +83,8 @@ class TabTestCase(TestCase):
             last_name="Thanos", first_name="", planet="Titan", uba=""
         )
         self.tab = create_tab(customer=customer)
-        self.item = create_menu_item(name="Duff Beer", category="Beer", price=5)
+        category = models.MenuItemCategory.objects.create(name="Beer")
+        self.item = create_menu_item(name="Duff Beer", category=category, price=5)
 
     def test_tab_get_purchases_with_single_purchase(self):
         """
@@ -145,7 +166,8 @@ class PurchaseTestCase(TestCase):
             last_name="Quill", first_name="Peter", planet="Earth", uba=""
         )
         tab = create_tab(customer=customer)
-        item = create_menu_item(name="Shi'ar Sake", category="Wine", price=7)
+        category = models.MenuItemCategory.objects.create(name="Wine")
+        item = create_menu_item(name="Shi'ar Sake", category=category, price=7)
         self.purchase = make_purchase(tab=tab, item=item, quantity=2, amount=14)
 
     def test_purchase_update_amount_with_change_to_quantity(self):
@@ -289,9 +311,8 @@ class AllPurchasesViewTestCase(TestCase):
             last_name="Titan", first_name="Gamora", planet="Zen-Whoberi", uba=""
         )
         self.tab = create_tab(customer=customer)
-        self.item = create_menu_item(
-            name="Infinity Watch", category="Cocktail", price=12
-        )
+        category = models.MenuItemCategory.objects.create(name="Cocktail")
+        self.item = create_menu_item(name="Infinity Watch", category=category, price=12)
 
     def test_no_purchases(self):
         """
@@ -416,8 +437,9 @@ class TabDetailsViewTestCase(TestCase):
             planet="Chandilar",
             uba="P86KIIMSJRG5AMPEPZ16A1ZO",
         )
+        category = models.MenuItemCategory.objects.create(name="Wine")
         self.item = create_menu_item(
-            name="Skrull Vineyards Pinot Noir", category="Wine", price=6
+            name="Skrull Vineyards Pinot Noir", category=category, price=6
         )
 
     def test_no_tabs(self):
@@ -476,7 +498,7 @@ class TabDetailsViewTestCase(TestCase):
         self.assertContains(response, "Total: 48.00 credits")
 
 
-class AllCategoriesViewTestCase(TestCase):
+class AllMenuCategoriesViewTestCase(TestCase):
     def test_single_menu_category(self):
         """
         The menu categories page should display a single category if
@@ -516,6 +538,8 @@ class AllCategoriesViewTestCase(TestCase):
         self.assertNotContains(response, "Gin")
         self.assertQuerySetEqual(response.context["categories"], [])
 
+
+class AllInventoryCategoriesViewTestCase(TestCase):
     def test_single_inventory_category(self):
         """
         The inventory categories page should display a single category
@@ -554,3 +578,59 @@ class AllCategoriesViewTestCase(TestCase):
         )
         self.assertNotContains(response, "Juice")
         self.assertQuerySetEqual(response.context["categories"], [])
+
+
+class MenuCategoryViewTestCase(TestCase):
+    def setUp(self):
+        self.category = models.MenuItemCategory.objects.create(name="Cocktail")
+
+    def test_no_menu_items(self):
+        """
+        If no menu items exist in a category, an appropriate message
+        should be displayed.
+        """
+        response = self.client.get(
+            reverse(
+                "cantina:view_category",
+                kwargs={"table": "menu", "id": self.category.id},
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/menu.html")
+        self.assertContains(response, "No cocktail is available.")
+        self.assertQuerySetEqual(response.context["instances"], [])
+
+    def test_single_menu_item(self):
+        """
+        The menu category should display a single item if only one item
+        is added.
+        """
+        cocktail = create_menu_item(
+            name="Marvelous Manhattan", category=self.category, price=11
+        )
+        response = self.client.get(
+            reverse(
+                "cantina:view_category",
+                kwargs={"table": "menu", "id": self.category.id},
+            )
+        )
+        self.assertQuerySetEqual(response.context["instances"], [cocktail])
+
+    def test_multiple_menu_items(self):
+        """
+        The menu category should display multiple item sorted
+        alphabetically.
+        """
+        cocktail1 = create_menu_item(
+            name="S.A.B.E.R. Fury", category=self.category, price=13
+        )
+        cocktail2 = create_menu_item(
+            name="King's Whisper", category=self.category, price=12
+        )
+        response = self.client.get(
+            reverse(
+                "cantina:view_category",
+                kwargs={"table": "menu", "id": self.category.id},
+            )
+        )
+        self.assertQuerySetEqual(response.context["instances"], [cocktail2, cocktail1])
