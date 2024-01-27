@@ -187,7 +187,8 @@ class PurchaseTestCase(TestCase):
 class AllCustomerViewTestCase(TestCase):
     def test_no_customers(self):
         """
-        If no customers exist, an appropriate message is displayed.
+        If no customers exist, an appropriate message should be
+        displayed.
         """
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "customers"})
@@ -238,52 +239,6 @@ class AllCustomerViewTestCase(TestCase):
         )
 
 
-class AllPurchaseViewTestCase(TestCase):
-    def setUp(self):
-        customer = create_customer(
-            last_name="Titan", first_name="Gamora", planet="Zen-Whoberi", uba=""
-        )
-        self.tab = create_tab(customer=customer)
-        self.item = create_menu_item(
-            name="Infinity Watch", category="Cocktail", price=12
-        )
-
-    def test_no_purchases(self):
-        """
-        If no purchases exist, an appropriate message is displayed.
-        """
-        response = self.client.get(
-            reverse("cantina:view_all", kwargs={"table": "purchases"})
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.templates[0].name, "cantina/purchases.html")
-        self.assertContains(response, "No purchases are available.")
-        self.assertQuerySetEqual(response.context["instances"], [])
-
-    def test_single_purchase(self):
-        """
-        The purchases page should display a single purchase if only one
-        purchase is added.
-        """
-        purchase = make_purchase(tab=self.tab, item=self.item, quantity=1, amount=12)
-        response = self.client.get(
-            reverse("cantina:view_all", kwargs={"table": "purchases"})
-        )
-        self.assertQuerySetEqual(response.context["instances"], [purchase])
-
-    def test_multiple_purchases(self):
-        """
-        The purchases page should display multiple purchases sorted by
-        the time they were made in descending order.
-        """
-        purchase1 = make_purchase(tab=self.tab, item=self.item, quantity=3, amount=36)
-        purchase2 = make_purchase(tab=self.tab, item=self.item, quantity=2, amount=24)
-        response = self.client.get(
-            reverse("cantina:view_all", kwargs={"table": "purchases"})
-        )
-        self.assertQuerySetEqual(response.context["instances"], [purchase2, purchase1])
-
-
 class AllTabViewTestCase(TestCase):
     def setUp(self):
         create_customer(
@@ -292,7 +247,7 @@ class AllTabViewTestCase(TestCase):
         create_customer(last_name="Groot", first_name="", planet="Planet X", uba="")
 
     def test_no_tabs(self):
-        """If no tabs exist, an appropriate message is displayed."""
+        """If no tabs exist, an appropriate message should be displayed."""
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "tabs"})
         )
@@ -328,6 +283,53 @@ class AllTabViewTestCase(TestCase):
         self.assertQuerySetEqual(response.context["instances"], [tab2, tab1])
 
 
+class AllPurchaseViewTestCase(TestCase):
+    def setUp(self):
+        customer = create_customer(
+            last_name="Titan", first_name="Gamora", planet="Zen-Whoberi", uba=""
+        )
+        self.tab = create_tab(customer=customer)
+        self.item = create_menu_item(
+            name="Infinity Watch", category="Cocktail", price=12
+        )
+
+    def test_no_purchases(self):
+        """
+        If no purchases exist, an appropriate message should be
+        displayed.
+        """
+        response = self.client.get(
+            reverse("cantina:view_all", kwargs={"table": "purchases"})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/purchases.html")
+        self.assertContains(response, "No purchases are available.")
+        self.assertQuerySetEqual(response.context["instances"], [])
+
+    def test_single_purchase(self):
+        """
+        The purchases page should display a single purchase if only one
+        purchase is added.
+        """
+        purchase = make_purchase(tab=self.tab, item=self.item, quantity=1, amount=12)
+        response = self.client.get(
+            reverse("cantina:view_all", kwargs={"table": "purchases"})
+        )
+        self.assertQuerySetEqual(response.context["instances"], [purchase])
+
+    def test_multiple_purchases(self):
+        """
+        The purchases page should display multiple purchases sorted by
+        the time they were made in descending order.
+        """
+        purchase1 = make_purchase(tab=self.tab, item=self.item, quantity=3, amount=36)
+        purchase2 = make_purchase(tab=self.tab, item=self.item, quantity=2, amount=24)
+        response = self.client.get(
+            reverse("cantina:view_all", kwargs={"table": "purchases"})
+        )
+        self.assertQuerySetEqual(response.context["instances"], [purchase2, purchase1])
+
+
 class CustomerDetailsTestCase(TestCase):
     def test_no_customers(self):
         """
@@ -339,7 +341,7 @@ class CustomerDetailsTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 404)
 
-    def test_customer_info_no_uba(self):
+    def test_customer_with_no_uba(self):
         """
         The detail view of a customer should display the customer
         information. If a customer does not have a UBA number, the
@@ -404,3 +406,71 @@ class CustomerDetailsTestCase(TestCase):
         )
         self.assertContains(response, "Account History")
         self.assertQuerySetEqual(medusa.tab_set.all(), [tab2, tab3, tab1])
+
+
+class TabDetailsTestCase(TestCase):
+    def setUp(self):
+        self.customer = create_customer(
+            last_name="Summers",
+            first_name="Gabriel",
+            planet="Chandilar",
+            uba="P86KIIMSJRG5AMPEPZ16A1ZO",
+        )
+        self.item = create_menu_item(
+            name="Skrull Vineyards Pinot Noir", category="Wine", price=6
+        )
+
+    def test_no_tabs(self):
+        """
+        If no tabs exist, the detail view of a tab should return a 404
+        status code.
+        """
+        response = self.client.get(
+            reverse("cantina:view", kwargs={"table": "tabs", "id": 1})
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_open_tab_with_no_purchases(self):
+        """
+        The detail view of a tab should display the tab information. If
+        a tab is still open, the Due field should be present and the
+        Closed field should not be present in the detail view of a tab.
+        If the tab has no purchases assigned to it, then an appropriate
+        message should be displayed.
+        """
+        tab = create_tab(customer=self.customer)
+        response = self.client.get(
+            reverse("cantina:view", kwargs={"table": "tabs", "id": tab.id})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/tab.html")
+        self.assertContains(response, tab.customer.name)
+        self.assertContains(response, tab.opened.strftime("%Y-%m-%d %H:%M"))
+        self.assertContains(response, tab.due.strftime("%Y-%m-%d %H:%M"))
+        self.assertNotContains(response, "Closed")
+        self.assertContains(response, "No purchases have been made.")
+
+    def test_closed_tab_with_purchases(self):
+        """
+        The detail view of a tab should display the tab information. If
+        a tab is closed, the Closed field should be present and the
+        Due field should not be present in the detail view of a tab.
+        If the tab has purchases assigned to it, then the purchases
+        should be displayed in ascending order of when the purchases
+        were made. The total amount of the tab should also be displayed.
+        """
+        tab = create_tab(
+            customer=self.customer,
+            closed=datetime(year=1993, month=9, day=3, hour=6, minute=10, second=32),
+        )
+        purchase1 = make_purchase(tab=tab, item=self.item, quantity=1, amount=6)
+        purchase2 = make_purchase(tab=tab, item=self.item, quantity=2, amount=12)
+        purchase3 = make_purchase(tab=tab, item=self.item, quantity=5, amount=30)
+        response = self.client.get(
+            reverse("cantina:view", kwargs={"table": "tabs", "id": tab.id})
+        )
+        self.assertContains(response, tab.opened.strftime("%Y-%m-%d %H:%M"))
+        self.assertContains(response, tab.closed.strftime("%Y-%m-%d %H:%M"))
+        self.assertNotContains(response, "Due")
+        self.assertQuerySetEqual(tab.get_purchases(), [purchase1, purchase2, purchase3])
+        self.assertContains(response, "Total: 48.00 credits")
