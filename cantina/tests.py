@@ -882,6 +882,7 @@ class AddCustomerViewTestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.redirect_chain[0][0], f"/customers/{majestrix.id}/")
+        self.assertEqual(response.templates[0].name, "cantina/customer.html")
         self.assertEqual(majestrix.last_name, "Neramani")
         self.assertEqual(majestrix.first_name, "Lilandra")
         self.assertEqual(majestrix.planet, "Chandilar")
@@ -944,3 +945,95 @@ class AddCustomerViewTestCase(TestCase):
             response,
             "Customer with this Last name, First name and UBA Number already exists.",
         )
+
+
+class AddMenuItemViewTestCase(TestCase):
+    def setUp(self):
+        self.category = MenuItemCategory.objects.create(name="Liqueur")
+
+    def test_get_request(self):
+        """
+        The add menu item view should return a blank submission form for
+        adding a menu item upon receiving a GET request.
+        """
+        response = self.client.get(
+            reverse(
+                "cantina:add_item", kwargs={"table": "menu", "id": self.category.id}
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/add_instance.html")
+        self.assertContains(response, "<h1>Add Liqueur to Menu</h1>")
+        self.assertContains(response, "selected>Liqueur")
+        self.assertContains(response, "Name:")
+        self.assertContains(response, "Price:")
+
+    def test_valid_post_request(self):
+        """
+        The add menu item view should add a menu item to the database
+        according to the data submitted in a valid POST request.
+        """
+        response = self.client.post(
+            reverse(
+                "cantina:add_item", kwargs={"table": "menu", "id": self.category.id}
+            ),
+            {"category": self.category.id, "name": "Grand Marnier", "price": 10},
+            follow=True,
+        )
+        grand_marnier = MenuItem.objects.get(name="Grand Marnier")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.redirect_chain[0][0], f"/menu/{grand_marnier.id}/")
+        self.assertEqual(response.templates[0].name, "cantina/menu_item.html")
+        self.assertEqual(grand_marnier.name, "Grand Marnier")
+        self.assertEqual(grand_marnier.category.name, "Liqueur")
+        self.assertEqual(grand_marnier.price, 10)
+
+    def test_invalid_post_request(self):
+        """
+        The add menu item view should not add a menu item to the
+        database if the POST request is missing required information.
+        Required fields with missing values should display a message to
+        the user and previously submitted information should be retained
+        in the form.
+        """
+        response = self.client.post(
+            reverse(
+                "cantina:add_item", kwargs={"table": "menu", "id": self.category.id}
+            ),
+            {"category": self.category.id, "name": "Grand Marnier"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        self.assertContains(response, 'name="name" value="Grand Marnier"')
+        with self.assertRaises(MenuItem.DoesNotExist):
+            MenuItem.objects.get(name="Grand Marnier")
+
+    def test_nonunique_menu_item(self):
+        """
+        The add menu item view should not add a menu item to the
+        database if the menu item to be added has the same name as
+        another menu item in the database.
+        """
+        self.client.post(
+            reverse(
+                "cantina:add_item", kwargs={"table": "menu", "id": self.category.id}
+            ),
+            {"category": self.category.id, "name": "Grand Marnier", "price": 10},
+            follow=True,
+        )
+        response = self.client.post(
+            reverse(
+                "cantina:add_item", kwargs={"table": "menu", "id": self.category.id}
+            ),
+            {"category": self.category.id, "name": "Grand Marnier", "price": 15},
+            follow=True,
+        )
+        grand_marnier = MenuItem.objects.get(name="Grand Marnier")
+
+        with self.assertRaises(MenuItem.DoesNotExist):
+            MenuItem.objects.get(price=15)
+        self.assertEqual(grand_marnier.price, 10)
+        self.assertContains(response, "Menu item with this Name already exists.")
