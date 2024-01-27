@@ -311,8 +311,8 @@ class AllPurchasesViewTestCase(TestCase):
             last_name="Titan", first_name="Gamora", planet="Zen-Whoberi", uba=""
         )
         self.tab = create_tab(customer=customer)
-        category = models.MenuItemCategory.objects.create(name="Cocktail")
-        self.item = create_menu_item(name="Infinity Watch", category=category, price=12)
+        cocktail = models.MenuItemCategory.objects.create(name="Cocktail")
+        self.item = create_menu_item(name="Infinity Watch", category=cocktail, price=12)
 
     def test_no_purchases(self):
         """
@@ -437,9 +437,9 @@ class TabDetailsViewTestCase(TestCase):
             planet="Chandilar",
             uba="P86KIIMSJRG5AMPEPZ16A1ZO",
         )
-        category = models.MenuItemCategory.objects.create(name="Wine")
+        wine = models.MenuItemCategory.objects.create(name="Wine")
         self.item = create_menu_item(
-            name="Skrull Vineyards Pinot Noir", category=category, price=6
+            name="Skrull Vineyards Pinot Noir", category=wine, price=6
         )
 
     def test_no_tabs(self):
@@ -504,14 +504,14 @@ class AllMenuCategoriesViewTestCase(TestCase):
         The menu categories page should display a single category if
         only one category is added.
         """
-        category = models.MenuItemCategory.objects.create(name="Gin")
+        gin = models.MenuItemCategory.objects.create(name="Gin")
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "menu"})
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/categories.html")
         self.assertContains(response, "<h1>Menu</h1>")
-        self.assertQuerySetEqual(response.context["categories"], [category])
+        self.assertQuerySetEqual(response.context["categories"], [gin])
         self.assertContains(response, "Gin")
 
     def test_multiple_menu_categories(self):
@@ -519,12 +519,12 @@ class AllMenuCategoriesViewTestCase(TestCase):
         The menu categories page should display multiple categories
         sorted alphabetically.
         """
-        category1 = models.MenuItemCategory.objects.create(name="Gin")
-        category2 = models.MenuItemCategory.objects.create(name="Beer")
+        gin = models.MenuItemCategory.objects.create(name="Gin")
+        beer = models.MenuItemCategory.objects.create(name="Beer")
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "menu"})
         )
-        self.assertQuerySetEqual(response.context["categories"], [category2, category1])
+        self.assertQuerySetEqual(response.context["categories"], [beer, gin])
 
     def test_menu_category_no_inventory_categories(self):
         """
@@ -545,27 +545,31 @@ class AllInventoryCategoriesViewTestCase(TestCase):
         The inventory categories page should display a single category
         if only one category is added.
         """
-        category = models.InventoryItemCategory.objects.create(name="Juice")
+        vodka = models.InventoryItemCategory.objects.create(name="Vodka")
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "inventory"})
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/categories.html")
         self.assertContains(response, "<h1>Inventory</h1>")
-        self.assertQuerySetEqual(response.context["categories"], [category])
-        self.assertContains(response, "Juice")
+        self.assertQuerySetEqual(response.context["categories"], [vodka])
+        self.assertContains(response, "Vodka")
 
     def test_multiple_inventory_categories(self):
         """
         The inventory categories page should display multiple categories
         sorted alphabetically.
         """
-        category1 = models.InventoryItemCategory.objects.create(name="Tequila")
-        category2 = models.InventoryItemCategory.objects.create(name="Miscellaneous")
+        tequila = models.InventoryItemCategory.objects.create(name="Tequila")
+        miscellaneous = models.InventoryItemCategory.objects.create(
+            name="Miscellaneous"
+        )
         response = self.client.get(
             reverse("cantina:view_categories", kwargs={"table": "inventory"})
         )
-        self.assertQuerySetEqual(response.context["categories"], [category2, category1])
+        self.assertQuerySetEqual(
+            response.context["categories"], [miscellaneous, tequila]
+        )
 
     def test_inventory_category_no_menu_categories(self):
         """
@@ -605,7 +609,7 @@ class MenuCategoryViewTestCase(TestCase):
         The menu category should display a single item if only one item
         is added.
         """
-        cocktail = create_menu_item(
+        marvelous_manhattan = create_menu_item(
             name="Marvelous Manhattan", category=self.category, price=11
         )
         response = self.client.get(
@@ -614,17 +618,17 @@ class MenuCategoryViewTestCase(TestCase):
                 kwargs={"table": "menu", "id": self.category.id},
             )
         )
-        self.assertQuerySetEqual(response.context["instances"], [cocktail])
+        self.assertQuerySetEqual(response.context["instances"], [marvelous_manhattan])
 
     def test_multiple_menu_items(self):
         """
-        The menu category should display multiple item sorted
+        The menu category should display multiple items sorted
         alphabetically.
         """
-        cocktail1 = create_menu_item(
+        saber_fury = create_menu_item(
             name="S.A.B.E.R. Fury", category=self.category, price=13
         )
-        cocktail2 = create_menu_item(
+        kings_whisper = create_menu_item(
             name="King's Whisper", category=self.category, price=12
         )
         response = self.client.get(
@@ -633,4 +637,79 @@ class MenuCategoryViewTestCase(TestCase):
                 kwargs={"table": "menu", "id": self.category.id},
             )
         )
-        self.assertQuerySetEqual(response.context["instances"], [cocktail2, cocktail1])
+        self.assertQuerySetEqual(
+            response.context["instances"], [kings_whisper, saber_fury]
+        )
+
+
+class InventoryCategoryViewTestCase(TestCase):
+    def setUp(self):
+        self.category = models.InventoryItemCategory.objects.create(name="Juice")
+
+    def test_no_inventory_items(self):
+        """
+        If no inventory items exist in a category, an appropriate
+        message should be displayed.
+        """
+        response = self.client.get(
+            reverse(
+                "cantina:view_category",
+                kwargs={"table": "inventory", "id": self.category.id},
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/inventory.html")
+        self.assertContains(response, "No juice is available.")
+        self.assertQuerySetEqual(response.context["instances"], [])
+
+    def test_single_inventory_item(self):
+        """
+        The inventory category should display a single item if only one
+        item is added.
+        """
+        lime_juice = create_inventory_item(
+            name="Lime Juice",
+            category=self.category,
+            stock=10,
+            cost=4,
+            reorder_point=20,
+            reorder_amount=60,
+        )
+        response = self.client.get(
+            reverse(
+                "cantina:view_category",
+                kwargs={"table": "inventory", "id": self.category.id},
+            )
+        )
+        self.assertQuerySetEqual(response.context["instances"], [lime_juice])
+
+    def test_multiple_inventory_items(self):
+        """
+        The inventory category should display multiple items sorted
+        alphabetically.
+        """
+        lemon_juice = create_inventory_item(
+            name="Lemon Juice",
+            category=self.category,
+            stock=6,
+            cost=3,
+            reorder_point=2,
+            reorder_amount=10,
+        )
+        orange_juice = create_inventory_item(
+            name="Orange Juice",
+            category=self.category,
+            stock=15,
+            cost=6,
+            reorder_point=10,
+            reorder_amount=50,
+        )
+        response = self.client.get(
+            reverse(
+                "cantina:view_category",
+                kwargs={"table": "inventory", "id": self.category.id},
+            )
+        )
+        self.assertQuerySetEqual(
+            response.context["instances"], [lemon_juice, orange_juice]
+        )
