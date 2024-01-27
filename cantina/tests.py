@@ -918,14 +918,11 @@ class AddCustomerViewTestCase(TestCase):
         if the customer to be added has the same name and UBA number as
         another customer in the database.
         """
-        self.client.post(
-            reverse("cantina:add", kwargs={"table": "customers"}),
-            {
-                "last_name": "Neramani",
-                "first_name": "Cal'syee",
-                "planet": "Aerie",
-                "uba": "81A09JDC9KAKXGDKA5BXSAZ2",
-            },
+        Customer.objects.create(
+            last_name="Neramani",
+            first_name="Cal'syee",
+            planet="Aerie",
+            uba="81A09JDC9KAKXGDKA5BXSAZ2",
         )
         response = self.client.post(
             reverse("cantina:add", kwargs={"table": "customers"}),
@@ -1017,19 +1014,12 @@ class AddMenuItemViewTestCase(TestCase):
         database if the menu item to be added has the same name as
         another menu item in the database.
         """
-        self.client.post(
-            reverse(
-                "cantina:add_item", kwargs={"table": "menu", "id": self.category.id}
-            ),
-            {"category": self.category.id, "name": "Grand Marnier", "price": 10},
-            follow=True,
-        )
+        MenuItem.objects.create(category=self.category, name="Grand Marnier", price=10)
         response = self.client.post(
             reverse(
                 "cantina:add_item", kwargs={"table": "menu", "id": self.category.id}
             ),
             {"category": self.category.id, "name": "Grand Marnier", "price": 15},
-            follow=True,
         )
         grand_marnier = MenuItem.objects.get(name="Grand Marnier")
 
@@ -1037,3 +1027,122 @@ class AddMenuItemViewTestCase(TestCase):
             MenuItem.objects.get(price=15)
         self.assertEqual(grand_marnier.price, 10)
         self.assertContains(response, "Menu item with this Name already exists.")
+
+
+class AddInventoryItemViewTestCase(TestCase):
+    def setUp(self):
+        self.category = InventoryItemCategory.objects.create(name="Cognac")
+
+    def test_get_request(self):
+        """
+        The add inventory item view should return a blank submission
+        form for adding an inventory item upon receiving a GET request.
+        """
+        response = self.client.get(
+            reverse(
+                "cantina:add_item",
+                kwargs={"table": "inventory", "id": self.category.id},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/add_instance.html")
+        self.assertContains(response, "<h1>Add Cognac to Inventory</h1>")
+        self.assertContains(response, "selected>Cognac")
+        self.assertContains(response, "Name:")
+        self.assertContains(response, "Cost:")
+        self.assertContains(response, "Stock:")
+        self.assertContains(response, "Reorder point:")
+        self.assertContains(response, "Reorder amount:")
+
+    def test_valid_post_request(self):
+        """
+        The add inventory item view should add an inventory item to the
+        database according to the data submitted in a valid POST request.
+        """
+        response = self.client.post(
+            reverse(
+                "cantina:add_item",
+                kwargs={"table": "inventory", "id": self.category.id},
+            ),
+            {
+                "category": self.category.id,
+                "name": "Asgardian Cognac",
+                "cost": 70,
+                "stock": 100,
+                "reorder_point": 20,
+                "reorder_amount": 40,
+            },
+            follow=True,
+        )
+        asgardian_cognac = InventoryItem.objects.get(name="Asgardian Cognac")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.redirect_chain[0][0], f"/inventory/{asgardian_cognac.id}/"
+        )
+        self.assertEqual(response.templates[0].name, "cantina/inventory_item.html")
+        self.assertEqual(asgardian_cognac.name, "Asgardian Cognac")
+        self.assertEqual(asgardian_cognac.category.name, "Cognac")
+        self.assertEqual(asgardian_cognac.cost, 70)
+        self.assertEqual(asgardian_cognac.stock, 100)
+        self.assertEqual(asgardian_cognac.reorder_point, 20)
+        self.assertEqual(asgardian_cognac.reorder_amount, 40)
+
+    def test_invalid_post_request(self):
+        """
+        The add inventory item view should not add an inventory item to
+        the database if the POST request is missing required
+        information. Required fields with missing values should display
+        a message to the user and previously submitted information
+        should be retained in the form.
+        """
+        response = self.client.post(
+            reverse(
+                "cantina:add_item",
+                kwargs={"table": "inventory", "id": self.category.id},
+            ),
+            {"category": self.category.id, "name": "Asgardian Cognac", "stock": 50},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        self.assertContains(response, 'name="name" value="Asgardian Cognac"')
+        self.assertContains(response, 'name="stock" value="50"')
+        with self.assertRaises(InventoryItem.DoesNotExist):
+            InventoryItem.objects.get(name="Asgardian Cognac")
+
+    def test_nonunique_inventory_item(self):
+        """
+        The add inventory item view should not add an inventory item to
+        the database if the inventory item to be added has the same
+        name as another inventory item in the database.
+        """
+        InventoryItem.objects.create(
+            category=self.category,
+            name="Asgardian Cognac",
+            cost=70,
+            stock=100,
+            reorder_point=20,
+            reorder_amount=40,
+        )
+        response = self.client.post(
+            reverse(
+                "cantina:add_item",
+                kwargs={"table": "inventory", "id": self.category.id},
+            ),
+            {
+                "category": self.category.id,
+                "name": "Asgardian Cognac",
+                "cost": 60,
+                "stock": 120,
+                "reorder_point": 10,
+                "reorder_amount": 30,
+            },
+        )
+        asgardian_cognac = InventoryItem.objects.get(name="Asgardian Cognac")
+
+        with self.assertRaises(InventoryItem.DoesNotExist):
+            InventoryItem.objects.get(cost=60)
+        self.assertEqual(asgardian_cognac.cost, 70)
+        self.assertContains(response, "Inventory item with this Name already exists.")
