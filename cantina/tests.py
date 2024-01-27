@@ -236,7 +236,9 @@ class AllTabsViewTestCase(TestCase):
         )
 
     def test_no_tabs(self):
-        """If no tabs exist, an appropriate message should be displayed."""
+        """
+        If no tabs exist, an appropriate message should be displayed.
+        """
         response = self.client.get(
             reverse("cantina:view_all", kwargs={"table": "tabs"})
         )
@@ -844,4 +846,101 @@ class InventoryItemDetailsViewTestCase(TestCase):
 
 
 class AddCustomerViewTestCase(TestCase):
-    pass
+    def test_get_request(self):
+        """
+        The add customer view should return a blank submission form for
+        adding a customer upon receiving a GET request.
+        """
+        response = self.client.get(
+            reverse("cantina:add", kwargs={"table": "customers"})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/add_instance.html")
+        self.assertContains(response, "<h1>Add Customer</h1>")
+        self.assertContains(response, "Last name:")
+        self.assertContains(response, "First name:")
+        self.assertContains(response, "Planet:")
+        self.assertContains(response, "UBA Number:")
+
+    def test_valid_post_request(self):
+        """
+        The add customer view should add a customer to the database
+        according to the data submitted in a valid POST request.
+        """
+        response = self.client.post(
+            reverse("cantina:add", kwargs={"table": "customers"}),
+            {
+                "last_name": "Neramani",
+                "first_name": "Lilandra",
+                "planet": "Chandilar",
+                "uba": "SHYRR8K0O1WXXP12RQHT3B6N",
+            },
+            follow=True,
+        )
+        majestrix = Customer.objects.get(last_name="Neramani")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.redirect_chain[0][0], f"/customers/{majestrix.id}/")
+        self.assertEqual(majestrix.last_name, "Neramani")
+        self.assertEqual(majestrix.first_name, "Lilandra")
+        self.assertEqual(majestrix.planet, "Chandilar")
+        self.assertEqual(majestrix.uba, "SHYRR8K0O1WXXP12RQHT3B6N")
+
+    def test_invalid_post_request(self):
+        """
+        The add customer view should not add a customer to the database
+        if the POST request is missing required information. Required
+        fields with missing values should display a message to the user
+        and previously submitted information should be retained in
+        the form.
+        """
+        response = self.client.post(
+            reverse("cantina:add", kwargs={"table": "customers"}),
+            {
+                "last_name": "",
+                "first_name": "Cal'syee",
+                "planet": "",
+                "uba": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        self.assertContains(response, 'name="first_name" value="Cal&#x27;syee"')
+        with self.assertRaises(Customer.DoesNotExist):
+            Customer.objects.get(first_name="Cal'syee")
+
+    def test_nonunique_customer(self):
+        """
+        The add customer view should not add a customer to the database
+        if the customer to be added has the same name and UBA number as
+        another customer in the database.
+        """
+        self.client.post(
+            reverse("cantina:add", kwargs={"table": "customers"}),
+            {
+                "last_name": "Neramani",
+                "first_name": "Cal'syee",
+                "planet": "Aerie",
+                "uba": "81A09JDC9KAKXGDKA5BXSAZ2",
+            },
+        )
+        response = self.client.post(
+            reverse("cantina:add", kwargs={"table": "customers"}),
+            {
+                "last_name": "Neramani",
+                "first_name": "Cal'syee",
+                "planet": "Chandilar",
+                "uba": "81A09JDC9KAKXGDKA5BXSAZ2",
+            },
+        )
+        deathbird = Customer.objects.get(last_name="Neramani")
+
+        with self.assertRaises(Customer.DoesNotExist):
+            Customer.objects.get(planet="Chandilar")
+        self.assertEqual(deathbird.planet, "Aerie")
+        self.assertContains(
+            response,
+            "Customer with this Last name, First name and UBA Number already exists.",
+        )
