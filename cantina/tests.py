@@ -1613,3 +1613,109 @@ class EditMenuItemViewCase(TestCase):
         self.assertContains(response, 'name="name" value="Cosmic Control (Anejo)"')
         with self.assertRaises(MenuItem.DoesNotExist):
             MenuItem.objects.get(name="Cosmic Control (Anejo)")
+
+
+class EditInventoryItemViewCase(TestCase):
+    def setUp(self):
+        category = InventoryItemCategory.objects.create(name="Wine")
+        self.item = InventoryItem.objects.create(
+            name="Chitauri Orchards Champagne",
+            category=category,
+            stock=50,
+            cost=45,
+            reorder_point=10,
+            reorder_amount=30,
+        )
+
+    def test_item_does_not_exist(self):
+        """
+        If the inventory item does not exist, the edit inventory item
+        view should return a 404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:edit", kwargs={"table": "inventory", "id": 1})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request(self):
+        """
+        The edit inventory item view should return a submission form
+        with all of the fields filled with the inventory item's current
+        values upon receiving a GET request.
+        """
+        response = self.client.get(
+            reverse("cantina:edit", kwargs={"table": "inventory", "id": self.item.id})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/edit_instance.html")
+        self.assertContains(response, f"<h1>Editing: {self.item.name}")
+        self.assertContains(response, f"selected>{self.item.category.name}")
+        self.assertContains(response, f'name="name" value="{self.item.name}"')
+        self.assertContains(response, f'name="cost" value="{self.item.cost}.00"')
+        self.assertContains(response, f'name="stock" value="{self.item.stock}.00"')
+        self.assertContains(
+            response, f'name="reorder_point" value="{self.item.reorder_point}"'
+        )
+        self.assertContains(
+            response, f'name="reorder_amount" value="{self.item.reorder_amount}"'
+        )
+
+    def test_valid_post_request(self):
+        """
+        The edit inventory item view should edit an inventory item's
+        details according to the data submitted in a valid POST request.
+        """
+        response = self.client.post(
+            reverse("cantina:edit", kwargs={"table": "inventory", "id": self.item.id}),
+            {
+                "category": f"{self.item.category.id}",
+                "name": "Chitauri Orchards Champagne",
+                "stock": 30,
+                "cost": 50,
+                "reorder_point": 15,
+                "reorder_amount": 50,
+            },
+            follow=True,
+        )
+        item = InventoryItem.objects.get(id=self.item.id)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.redirect_chain[0][0], f"/inventory/{self.item.id}/")
+        self.assertEqual(response.templates[0].name, "cantina/inventory_item.html")
+        self.assertEqual(item.category.name, self.item.category.name)
+        self.assertEqual(item.name, self.item.name)
+        self.assertEqual(item.stock, 30)
+        self.assertEqual(item.cost, 50)
+        self.assertEqual(item.reorder_point, 15)
+        self.assertEqual(item.reorder_amount, 50)
+
+    def test_invalid_post_request(self):
+        """
+        The edit inventory item view should not edit an inventory item's
+        information if the POST request is missing required information.
+        Required fields with missing values should display a message to
+        the user and previously submitted information should be
+        retained in the form.
+        """
+        response = self.client.post(
+            reverse("cantina:edit", kwargs={"table": "inventory", "id": self.item.id}),
+            {
+                "category": f"{self.item.category.id}",
+                "name": "Chitauri Orchards Champagne",
+                "stock": 30,
+                "cost": "",
+                "reorder_point": 15,
+                "reorder_amount": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        self.assertContains(response, f"selected>{self.item.category.name}")
+        self.assertContains(response, f'name="name" value="{self.item.name}"')
+        self.assertContains(response, 'name="stock" value="30"')
+        self.assertContains(response, 'name="reorder_point" value="15"')
+        with self.assertRaises(InventoryItem.DoesNotExist):
+            InventoryItem.objects.get(stock=30)
