@@ -1437,3 +1437,99 @@ class EditCustomerViewCase(TestCase):
         self.assertContains(response, 'name="uba" value="R35BQKCL8FT389JLJ8RHADSI"')
         with self.assertRaises(Customer.DoesNotExist):
             Customer.objects.get(last_name="Moondragon")
+
+
+class EditTabViewCase(TestCase):
+    def setUp(self):
+        customer = Customer.objects.create(
+            last_name="Annihilus",
+            first_name="",
+            planet="Arthros",
+            uba="0LFCE5K0E6HWLL3DCCB8B15H",
+        )
+        self.tab = Tab.objects.create(customer=customer)
+
+    def test_tab_does_not_exist(self):
+        """
+        If the tab does not exist, the edit tab view should return a
+        404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:edit", kwargs={"table": "tabs", "id": 1})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request(self):
+        """
+        The edit tab view should return a submission form with all of
+        the fields filled with the tab's current values for editing a
+        tab upon receiving a GET request.
+        """
+        response = self.client.get(
+            reverse("cantina:edit", kwargs={"table": "tabs", "id": self.tab.id})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/edit_instance.html")
+        self.assertContains(response, "<h1>Edit Tab:")
+
+        self.assertContains(response, f"selected> {self.tab.customer.name}")
+        self.assertContains(
+            response, f'name="due" value="{self.tab.due.strftime("%Y-%m-%d %H:%M:%S")}"'
+        )
+        self.assertNotContains(response, 'name="closed" value="')
+
+    def test_valid_post_request(self):
+        """
+        The edit tab view should edit a tab's details according to the
+        data submitted in a valid POST request.
+        """
+        response = self.client.post(
+            reverse("cantina:edit", kwargs={"table": "tabs", "id": self.tab.id}),
+            {
+                "customer": f"{self.tab.customer.id}",
+                "due": f"{self.tab.due.strftime('%Y-%m-%d %H:%M:%S')}",
+                "closed": "2024-01-01 18:30:15",
+            },
+            follow=True,
+        )
+        tab = Tab.objects.get(id=self.tab.id)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.redirect_chain[0][0], f"/tabs/{self.tab.id}/")
+        self.assertEqual(response.templates[0].name, "cantina/tab.html")
+        self.assertEqual(tab.customer.name, self.tab.customer.name)
+        self.assertEqual(
+            tab.due.strftime("%Y-%m-%d %H:%M:%S"),
+            self.tab.due.strftime("%Y-%m-%d %H:%M:%S"),
+        )
+        self.assertEqual(
+            tab.closed.strftime("%Y-%m-%d %H:%M:%S"), "2024-01-01 18:30:15"
+        )
+
+    def test_invalid_post_request(self):
+        """
+        The edit tab view should not edit a tab's information if the
+        POST request is missing required information. Required fields
+        with missing values should display a message to the user and
+        previously submitted information should be retained in the form.
+        """
+        response = self.client.post(
+            reverse("cantina:edit", kwargs={"table": "tabs", "id": self.tab.id}),
+            {
+                "customer": f"{self.tab.customer.id}",
+                "due": "",
+                "closed": "2024-01-01 18:30:15",
+            },
+        )
+        tab = Tab.objects.get(id=self.tab.id)
+        print(tab.closed)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        self.assertContains(response, f"selected> {self.tab.customer.name}")
+        self.assertContains(response, 'name="closed" value="2024-01-01 18:30:15"')
+        with self.assertRaises(Tab.DoesNotExist):
+            timestamp = datetime.strptime("2024-01-01 18:30:15", "%Y-%m-%d %H:%M:%S")
+            Tab.objects.get(closed=timestamp)
