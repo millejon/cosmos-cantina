@@ -1935,3 +1935,262 @@ class EditPurchaseViewCase(TestCase):
         self.assertContains(response, f"selected>{asteroid_m_anejo_rum.name}")
         with self.assertRaises(Purchase.DoesNotExist):
             Purchase.objects.get(item=asteroid_m_anejo_rum)
+
+
+class DeleteCustomerViewCase(TestCase):
+    def setUp(self):
+        self.customer = Customer.objects.create(
+            last_name="Knull",
+            first_name="",
+            planet="The Abyss",
+            uba="",
+        )
+
+    def test_customer_does_not_exist(self):
+        """
+        If the customer does not exist, the delete customer view should
+        return a 404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:delete", kwargs={"table": "customers", "id": 1})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request(self):
+        """
+        The delete customer view should delete the customer from the
+        database upon receiving a GET request.
+        """
+        customer = Customer.objects.get(id=self.customer.id)
+        self.assertEqual(customer.name, self.customer.name)
+
+        response = self.client.get(
+            reverse(
+                "cantina:delete", kwargs={"table": "customers", "id": self.customer.id}
+            ),
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/customers.html")
+        with self.assertRaises(Customer.DoesNotExist):
+            Customer.objects.get(id=self.customer.id)
+
+
+class DeleteTabViewCase(TestCase):
+    def setUp(self):
+        customer = Customer.objects.create(
+            last_name="Ronan",
+            first_name="",
+            planet="Hala",
+            uba="045K9PVXZ8R6GCE58MO10G9N",
+        )
+        self.tab = Tab.objects.create(customer=customer)
+
+    def test_tab_does_not_exist(self):
+        """
+        If the tab does not exist, the delete tab view should return a
+        404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:delete", kwargs={"table": "tabs", "id": 1})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request(self):
+        """
+        The delete tab view should delete the tab from the database
+        upon receiving a GET request.
+        """
+        tab = Tab.objects.get(id=self.tab.id)
+        self.assertEqual(tab.customer.name, self.tab.customer.name)
+
+        response = self.client.get(
+            reverse("cantina:delete", kwargs={"table": "tabs", "id": self.tab.id}),
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/tabs.html")
+        with self.assertRaises(Tab.DoesNotExist):
+            Tab.objects.get(id=self.tab.id)
+
+
+class DeleteMenuItemViewCase(TestCase):
+    def setUp(self):
+        category = MenuItemCategory.objects.create(name="Cocktail")
+        self.item = MenuItem.objects.create(
+            name="The Shapeshifter", category=category, price=18
+        )
+
+    def test_item_does_not_exist(self):
+        """
+        If the menu item does not exist, the delete menu item view
+        should return a 404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:delete", kwargs={"table": "menu", "id": 1})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request(self):
+        """
+        The delete menu item view should delete the menu item from the
+        database upon receiving a GET request.
+        """
+        item = MenuItem.objects.get(id=self.item.id)
+        self.assertEqual(item.name, self.item.name)
+
+        response = self.client.get(
+            reverse("cantina:delete", kwargs={"table": "menu", "id": self.item.id}),
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/menu.html")
+        with self.assertRaises(MenuItem.DoesNotExist):
+            MenuItem.objects.get(id=self.item.id)
+
+
+class DeleteInventoryItemViewCase(TestCase):
+    def setUp(self):
+        category = InventoryItemCategory.objects.create(name="Miscellaneous")
+        self.item = InventoryItem.objects.create(
+            name="Bloody Mary Mix",
+            category=category,
+            stock=80,
+            cost=4,
+            reorder_point=20,
+            reorder_amount=60,
+        )
+
+    def test_item_does_not_exist(self):
+        """
+        If the inventory item does not exist, the delete inventory item
+        view should return a 404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:delete", kwargs={"table": "inventory", "id": 1})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request(self):
+        """
+        The delete inventory item view should delete the inventory item
+        from the database upon receiving a GET request.
+        """
+        item = InventoryItem.objects.get(id=self.item.id)
+        self.assertEqual(item.name, self.item.name)
+
+        response = self.client.get(
+            reverse(
+                "cantina:delete", kwargs={"table": "inventory", "id": self.item.id}
+            ),
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/inventory.html")
+        with self.assertRaises(InventoryItem.DoesNotExist):
+            InventoryItem.objects.get(id=self.item.id)
+
+
+class DeleteComponentViewCase(TestCase):
+    def setUp(self):
+        menu_category = MenuItemCategory.objects.create(name="Liqueur")
+        inventory_category = InventoryItemCategory.objects.create(name="Liqueur")
+        item = MenuItem.objects.create(
+            name="Baileys Irish Cream", category=menu_category, price=7
+        )
+        ingredient = InventoryItem.objects.create(
+            name="Baileys Irish Cream",
+            category=inventory_category,
+            stock=120,
+            cost=20,
+            reorder_point=30,
+            reorder_amount=80,
+        )
+        self.recipe = Component.objects.create(
+            item=item, ingredient=ingredient, amount=1.5
+        )
+
+    def test_component_does_not_exist(self):
+        """
+        If the component does not exist, the delete component view
+        should return a 404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:delete", kwargs={"table": "components", "id": 1})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request(self):
+        """
+        The delete component view should delete the component from the
+        database upon receiving a GET request.
+        """
+        recipe = Component.objects.get(id=self.recipe.id)
+        self.assertEqual(recipe.amount, self.recipe.amount)
+
+        response = self.client.get(
+            reverse(
+                "cantina:delete", kwargs={"table": "components", "id": self.recipe.id}
+            ),
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/menu_item.html")
+        with self.assertRaises(Component.DoesNotExist):
+            Component.objects.get(id=self.recipe.id)
+
+
+class DeletePurchaseViewCase(TestCase):
+    def setUp(self):
+        customer = Customer.objects.create(
+            last_name="Rom", planet="Galador", uba="4BKV7R0CKCQLYXSKFD9I70G8"
+        )
+        tab = Tab.objects.create(customer=customer)
+        menu_category = MenuItemCategory.objects.create(name="Cocktail")
+        item = MenuItem.objects.create(
+            name="Sakaar Screwdriver", category=menu_category, price=11
+        )
+        self.purchase = Purchase.objects.create(
+            tab=tab, item=item, quantity=2, amount=22
+        )
+
+    def test_purchase_does_not_exist(self):
+        """
+        If the purchase does not exist, the delete purchase view should
+        return a 404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:delete", kwargs={"table": "purchases", "id": 1})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request(self):
+        """
+        The delete purchase view should delete the purchase from the
+        database upon receiving a GET request.
+        """
+        purchase = Purchase.objects.get(id=self.purchase.id)
+        self.assertEqual(purchase.item.name, self.purchase.item.name)
+
+        response = self.client.get(
+            reverse(
+                "cantina:delete", kwargs={"table": "purchases", "id": self.purchase.id}
+            ),
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/tab.html")
+        with self.assertRaises(Purchase.DoesNotExist):
+            Purchase.objects.get(id=self.purchase.id)
