@@ -1338,3 +1338,102 @@ class AddPurchaseViewTestCase(TestCase):
         self.assertContains(response, f"selected>{self.customer.name}")
         with self.assertRaises(Purchase.DoesNotExist):
             Purchase.objects.get(item=self.item)
+
+
+class EditCustomerViewCase(TestCase):
+    def setUp(self):
+        self.customer = Customer.objects.create(
+            last_name="Douglas",
+            first_name="Heather",
+            planet="Earth",
+            uba="R35BQKCL8FT389JLJ8RHADSI",
+        )
+
+    def test_customer_does_not_exist(self):
+        """
+        If the customer does not exist, the edit customer view should
+        return a 404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:edit", kwargs={"table": "customers", "id": 1})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request(self):
+        """
+        The edit customer view should return a submission form with
+        all of the fields filled with the customer's current values for
+        editing a customer upon receiving a GET request.
+        """
+        response = self.client.get(
+            reverse(
+                "cantina:edit", kwargs={"table": "customers", "id": self.customer.id}
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/edit_instance.html")
+        self.assertContains(response, f"<h1>Editing: {self.customer.name}")
+        self.assertContains(
+            response, f'name="last_name" value="{self.customer.last_name}"'
+        )
+        self.assertContains(
+            response, f'name="first_name" value="{self.customer.first_name}"'
+        )
+        self.assertContains(response, f'name="planet" value="{self.customer.planet}"')
+        self.assertContains(response, f'name="uba" value="{self.customer.uba}"')
+
+    def test_valid_post_request(self):
+        """
+        The edit customer view should edit a customer's details
+        according to the data submitted in a valid POST request.
+        """
+        response = self.client.post(
+            reverse(
+                "cantina:edit", kwargs={"table": "customers", "id": self.customer.id}
+            ),
+            {
+                "last_name": "Moondragon",
+                "first_name": "",
+                "planet": "Earth",
+                "uba": "R35BQKCL8FT389JLJ8RHADSI",
+            },
+            follow=True,
+        )
+        moondragon = Customer.objects.get(id=self.customer.id)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.redirect_chain[0][0], f"/customers/{self.customer.id}/"
+        )
+        self.assertEqual(response.templates[0].name, "cantina/customer.html")
+        self.assertEqual(moondragon.last_name, "Moondragon")
+        self.assertEqual(moondragon.first_name, "")
+
+    def test_invalid_post_request(self):
+        """
+        The edit customer view should not edit a customer's information
+        if the POST request is missing required information. Required
+        fields with missing values should display a message to the user
+        and previously submitted information should be retained in
+        the form.
+        """
+        response = self.client.post(
+            reverse(
+                "cantina:edit", kwargs={"table": "customers", "id": self.customer.id}
+            ),
+            {
+                "last_name": "Moondragon",
+                "first_name": "",
+                "planet": "",
+                "uba": "R35BQKCL8FT389JLJ8RHADSI",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        self.assertContains(response, 'name="last_name" value="Moondragon"')
+        self.assertContains(response, 'name="uba" value="R35BQKCL8FT389JLJ8RHADSI"')
+        with self.assertRaises(Customer.DoesNotExist):
+            Customer.objects.get(last_name="Moondragon")
