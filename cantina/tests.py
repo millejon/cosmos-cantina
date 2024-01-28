@@ -1719,3 +1719,112 @@ class EditInventoryItemViewCase(TestCase):
         self.assertContains(response, 'name="reorder_point" value="15"')
         with self.assertRaises(InventoryItem.DoesNotExist):
             InventoryItem.objects.get(stock=30)
+
+
+class EditComponentViewCase(TestCase):
+    def setUp(self):
+        menu_category = MenuItemCategory.objects.create(name="Beer")
+        inventory_category = InventoryItemCategory.objects.create(name="Beer")
+        item = MenuItem.objects.create(
+            name="Brood Brew", category=menu_category, price=4
+        )
+        ingredient = InventoryItem.objects.create(
+            name="Brood Brew",
+            category=inventory_category,
+            stock=200,
+            cost=1.50,
+            reorder_point=40,
+            reorder_amount=150,
+        )
+        self.recipe = Component.objects.create(
+            item=item, ingredient=ingredient, amount=1
+        )
+
+    def test_component_does_not_exist(self):
+        """
+        If the component does not exist, the edit component view should
+        return a 404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:edit", kwargs={"table": "components", "id": 1})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request(self):
+        """
+        The edit component view should return a submission form with
+        all of the fields filled with the component's current values
+        upon receiving a GET request.
+        """
+        response = self.client.get(
+            reverse(
+                "cantina:edit", kwargs={"table": "components", "id": self.recipe.id}
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/edit_instance.html")
+        self.assertContains(response, "<h1>Edit Component:")
+        self.assertContains(response, f"selected>{self.recipe.item.name}")
+        self.assertContains(response, f"selected>{self.recipe.ingredient.name}")
+        self.assertContains(response, f'name="amount" value="{self.recipe.amount}.00"')
+
+    def test_valid_post_request(self):
+        """
+        The edit component view should edit a component's details
+        according to the data submitted in a valid POST request.
+        """
+        response = self.client.post(
+            reverse(
+                "cantina:edit", kwargs={"table": "components", "id": self.recipe.id}
+            ),
+            {
+                "item": f"{self.recipe.item.id}",
+                "ingredient": f"{self.recipe.ingredient.id}",
+                "amount": "2",
+            },
+            follow=True,
+        )
+        recipe = Component.objects.get(id=self.recipe.id)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.redirect_chain[0][0], f"/menu/{self.recipe.item.id}/")
+        self.assertEqual(response.templates[0].name, "cantina/menu_item.html")
+        self.assertEqual(recipe.item.name, self.recipe.item.name)
+        self.assertEqual(recipe.ingredient.name, self.recipe.ingredient.name)
+        self.assertEqual(recipe.amount, 2)
+
+    def test_invalid_post_request(self):
+        """
+        The edit component view should not edit a component's
+        information if the POST request is missing required information.
+        Required fields with missing values should display a message to
+        the user and previously submitted information should be
+        retained in the form.
+        """
+        brood_budget_brew = InventoryItem.objects.create(
+            name="Brood Budget Brew",
+            category=self.recipe.ingredient.category,
+            stock=200,
+            cost=0.25,
+            reorder_point=50,
+            reorder_amount=150,
+        )
+        response = self.client.post(
+            reverse(
+                "cantina:edit", kwargs={"table": "components", "id": self.recipe.id}
+            ),
+            {
+                "item": f"{self.recipe.item.id}",
+                "ingredient": f"{brood_budget_brew.id}",
+                "amount": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        self.assertContains(response, f"selected>{self.recipe.item.name}")
+        self.assertContains(response, f"selected>{self.recipe.ingredient.name}")
+        with self.assertRaises(Component.DoesNotExist):
+            Component.objects.get(ingredient=brood_budget_brew)
