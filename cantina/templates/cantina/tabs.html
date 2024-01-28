@@ -7,30 +7,34 @@
 {% endblock %}
 
 {% block content %}
-  <table>
-    <thead>
-      <th>Tab #</th>
-      <th>Customer</th>
-      <th>Amount</th>
-      <th>Closed</th>
-      <th>Due</th>
-    </thead>
-    <tbody>
-      {% for tab in instances %}
-        <tr>
-          <td>
-            <a href="{% url 'cantina:view' table='tabs' id=tab.id %}">
-              {{ tab.id }}
-            </a>
-          </td>
-          <td>{{ tab.customer.name }}</td>
-          <td>{{ tab.get_amount }}</td>
-          <td>{{ tab.closed|date:"Y-m-d H:i" }}</td>
-          {% if not tab.closed %}
-            <td>{{ tab.due|date:"Y-m-d H:i" }}</td>
-          {% endif %}
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  {% if instances %}
+    <table>
+      <thead>
+        <th>Tab #</th>
+        <th>Customer</th>
+        <th>Amount</th>
+        <th>Closed</th>
+        <th>Due</th>
+      </thead>
+      <tbody>
+        {% for tab in instances %}
+          <tr>
+            <td>
+              <a href="{% url 'cantina:view' table='tabs' id=tab.id %}">
+                {{ tab.id }}
+              </a>
+            </td>
+            <td>{{ tab.customer.name }}</td>
+            <td>{{ tab.get_amount }}</td>
+            <td>{{ tab.closed|date:"Y-m-d H:i" }}</td>
+            {% if not tab.closed %}
+              <td>{{ tab.due|date:"Y-m-d H:i" }}</td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No tabs are available.</p>
+  {% endif %}
 {% endblock %}

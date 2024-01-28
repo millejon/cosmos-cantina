@@ -22,34 +22,38 @@
     <a href="{% url 'cantina:edit' table='tabs' id=instance.id %}">Edit</a>
     <a href="{% url 'cantina:delete' table='tabs' id=instance.id %}">Delete</a>
   </p>
-  <table>
-    <thead>
-      <th>Time</th>
-      <th>Item</th>
-      <th>Quantity</th>
-      <th>Amount</th>
-    </thead>
-    <tbody>
-      {% for purchase in instance.get_purchases %}
-        <tr>
-          <td>{{ purchase.time|date:"Y-m-d H:i" }}</td>
-          <td>{{ purchase.item.name }}</td>
-          <td>{{ purchase.quantity }}</td>
-          <td>{{ purchase.amount }}</td>
-          {% if not instance.closed %}
-            <td>
-              <a href="{% url 'cantina:comp_purchase' id=purchase.id %}">Comp</a>
-            </td>
-            <td>
-              <a href="{% url 'cantina:edit' table='purchases' id=purchase.id %}">Edit</a>
-            </td>
-            <td>
-              <a href="{% url 'cantina:delete' table='purchases' id=purchase.id %}">Delete</a>
-            </td>
-          {% endif %}
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  <p>Total: {{ instance.get_amount }} credits</p>
+  {% if instance.get_purchases %}
+    <table>
+      <thead>
+        <th>Time</th>
+        <th>Item</th>
+        <th>Quantity</th>
+        <th>Amount</th>
+      </thead>
+      <tbody>
+        {% for purchase in instance.get_purchases %}
+          <tr>
+            <td>{{ purchase.time|date:"Y-m-d H:i" }}</td>
+            <td>{{ purchase.item.name }}</td>
+            <td>{{ purchase.quantity }}</td>
+            <td>{{ purchase.amount }}</td>
+            {% if not instance.closed %}
+              <td>
+                <a href="{% url 'cantina:comp_purchase' id=purchase.id %}">Comp</a>
+              </td>
+              <td>
+                <a href="{% url 'cantina:edit' table='purchases' id=purchase.id %}">Edit</a>
+              </td>
+              <td>
+                <a href="{% url 'cantina:delete' table='purchases' id=purchase.id %}">Delete</a>
+              </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p>Total: {{ instance.get_amount }} credits</p>
+  {% else %}
+    <p>No purchases have been made.</p>
+  {% endif %}
 {% endblock %}

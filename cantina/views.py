@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, render, redirect
 
-from . import models
+from .models import Customer, Tab
 from .data import objects
 
 
@@ -85,20 +85,6 @@ def edit_instance(request, table, id):
     return render(request, "cantina/edit_instance.html", context)
 
 
-def delete_instance(request, table, id):
-    instance = get_object_or_404(objects[table]["model"], pk=id)
-    instance.delete()
-
-    if table == "purchases":
-        return redirect("cantina:view", table="tabs", id=instance.tab.id)
-    elif table == "components":
-        return redirect("cantina:view", table="menu", id=instance.item.id)
-    elif not table.endswith("s"):
-        return redirect("cantina:view_category", table=table, id=instance.category.id)
-    else:
-        return redirect("cantina:view_all", table=table)
-
-
 def edit_purchase(request, id):
     purchase = get_object_or_404(objects["purchases"]["model"], pk=id)
 
@@ -112,16 +98,26 @@ def edit_purchase(request, id):
             purchase.save()
             return redirect("cantina:view", table="tabs", id=purchase.tab.id)
     else:
-        customer = (
-            purchase.tab.customer.id,
-            f"{purchase.tab.customer.first_name} {purchase.tab.customer.last_name}",
-        )
         form = objects["purchases"]["form"](
-            initial={"customer": customer}, instance=purchase
+            initial={"customer": purchase.tab.customer}, instance=purchase
         )
 
     context = {"instance": purchase, "form": form, "table": "purchases"}
     return render(request, "cantina/edit_instance.html", context)
+
+
+def delete_instance(request, table, id):
+    instance = get_object_or_404(objects[table]["model"], pk=id)
+    instance.delete()
+
+    if table == "purchases":
+        return redirect("cantina:view", table="tabs", id=instance.tab.id)
+    elif table == "components":
+        return redirect("cantina:view", table="menu", id=instance.item.id)
+    elif not table.endswith("s"):
+        return redirect("cantina:view_category", table=table, id=instance.category.id)
+    else:
+        return redirect("cantina:view_all", table=table)
 
 
 def comp_purchase(request, id):
@@ -137,16 +133,16 @@ def comp_purchase(request, id):
 #                           HELPER FUNCTIONS                           #
 #                                                                      #
 ########################################################################
-def get_tab(customer: int) -> models.Tab:
+def get_tab(customer: int) -> Tab:
     """
     Return customer's open tab or, if the customer does not currently
     have an open tab, create one and return.
     """
-    customer = models.Customer.objects.get(pk=customer)
+    customer = Customer.objects.get(pk=customer)
     try:
         tab = customer.tab_set.get(closed__isnull=True)
-    except models.Tab.DoesNotExist:
-        tab = models.Tab(customer=customer)
+    except Tab.DoesNotExist:
+        tab = Tab.objects.create(customer=customer)
         tab.save()
 
     return tab
