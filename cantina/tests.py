@@ -1852,9 +1852,7 @@ class EditPurchaseViewCase(TestCase):
         If the purchase does not exist, the edit purchase view should
         return a 404 status code.
         """
-        response = self.client.get(
-            reverse("cantina:edit", kwargs={"table": "purchases", "id": 1})
-        )
+        response = self.client.get(reverse("cantina:edit_purchase", kwargs={"id": 1}))
 
         self.assertEqual(response.status_code, 404)
 
@@ -1865,9 +1863,7 @@ class EditPurchaseViewCase(TestCase):
         receiving a GET request.
         """
         response = self.client.get(
-            reverse(
-                "cantina:edit", kwargs={"table": "purchases", "id": self.purchase.id}
-            )
+            reverse("cantina:edit_purchase", kwargs={"id": self.purchase.id})
         )
 
         self.assertEqual(response.status_code, 200)
@@ -1885,9 +1881,7 @@ class EditPurchaseViewCase(TestCase):
         according to the data submitted in a valid POST request.
         """
         response = self.client.post(
-            reverse(
-                "cantina:edit", kwargs={"table": "purchases", "id": self.purchase.id}
-            ),
+            reverse("cantina:edit_purchase", kwargs={"id": self.purchase.id}),
             {
                 "customer": f"{self.purchase.tab.customer.id}",
                 "item": f"{self.purchase.item.id}",
@@ -1919,9 +1913,7 @@ class EditPurchaseViewCase(TestCase):
             name="Asteroid M Anejo Rum", category=self.purchase.item.category, price=15
         )
         response = self.client.post(
-            reverse(
-                "cantina:edit", kwargs={"table": "purchases", "id": self.purchase.id}
-            ),
+            reverse("cantina:edit_purchase", kwargs={"id": self.purchase.id}),
             {
                 "customer": f"{self.purchase.tab.customer.id}",
                 "item": f"{asteroid_m_anejo_rum.id}",
@@ -2194,3 +2186,45 @@ class DeletePurchaseViewCase(TestCase):
         self.assertEqual(response.templates[0].name, "cantina/tab.html")
         with self.assertRaises(Purchase.DoesNotExist):
             Purchase.objects.get(id=self.purchase.id)
+
+
+class CompPurchaseViewCase(TestCase):
+    def setUp(self):
+        customer = Customer.objects.create(
+            last_name="Korg", planet="Ria", uba="2C505IW11KW7O99Z4IDJTT0A"
+        )
+        tab = Tab.objects.create(customer=customer)
+        menu_category = MenuItemCategory.objects.create(name="Cocktail")
+        item = MenuItem.objects.create(
+            name="Dirty Badoon Martini", category=menu_category, price=14
+        )
+        self.purchase = Purchase.objects.create(
+            tab=tab, item=item, quantity=2, amount=28
+        )
+
+    def test_purchase_does_not_exist(self):
+        """
+        If the purchase does not exist, the comp purchase view should
+        return a 404 status code.
+        """
+        response = self.client.get(reverse("cantina:comp_purchase", kwargs={"id": 1}))
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request(self):
+        """
+        The comp purchase view should reduce the purchase amount to 0
+        upon receiving a GET request.
+        """
+        purchase = Purchase.objects.get(id=self.purchase.id)
+        self.assertEqual(purchase.amount, self.purchase.amount)
+
+        response = self.client.get(
+            reverse("cantina:comp_purchase", kwargs={"id": self.purchase.id}),
+            follow=True,
+        )
+        purchase = Purchase.objects.get(id=self.purchase.id)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/tab.html")
+        self.assertEqual(purchase.amount, 0)
