@@ -1363,8 +1363,8 @@ class EditCustomerViewCase(TestCase):
     def test_get_request(self):
         """
         The edit customer view should return a submission form with
-        all of the fields filled with the customer's current values for
-        editing a customer upon receiving a GET request.
+        all of the fields filled with the customer's current values
+        upon receiving a GET request.
         """
         response = self.client.get(
             reverse(
@@ -1463,8 +1463,8 @@ class EditTabViewCase(TestCase):
     def test_get_request(self):
         """
         The edit tab view should return a submission form with all of
-        the fields filled with the tab's current values for editing a
-        tab upon receiving a GET request.
+        the fields filled with the tab's current values upon receiving
+        a GET request.
         """
         response = self.client.get(
             reverse("cantina:edit", kwargs={"table": "tabs", "id": self.tab.id})
@@ -1473,7 +1473,6 @@ class EditTabViewCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/edit_instance.html")
         self.assertContains(response, "<h1>Edit Tab:")
-
         self.assertContains(response, f"selected> {self.tab.customer.name}")
         self.assertContains(
             response, f'name="due" value="{self.tab.due.strftime("%Y-%m-%d %H:%M:%S")}"'
@@ -1531,3 +1530,86 @@ class EditTabViewCase(TestCase):
         with self.assertRaises(Tab.DoesNotExist):
             timestamp = datetime.strptime("2024-01-01 18:30:15", "%Y-%m-%d %H:%M:%S")
             Tab.objects.get(closed=timestamp)
+
+
+class EditMenuItemViewCase(TestCase):
+    def setUp(self):
+        category = MenuItemCategory.objects.create(name="Tequila")
+        self.item = MenuItem.objects.create(
+            name="Cosmic Control (Blanco)", category=category, price=8
+        )
+
+    def test_item_does_not_exist(self):
+        """
+        If the menu item does not exist, the edit menu item view should
+        return a 404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:edit", kwargs={"table": "menu", "id": 1})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request(self):
+        """
+        The edit menu item view should return a submission form with
+        all of the fields filled with the menu item's current values
+        upon receiving a GET request.
+        """
+        response = self.client.get(
+            reverse("cantina:edit", kwargs={"table": "menu", "id": self.item.id})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/edit_instance.html")
+        self.assertContains(response, f"<h1>Editing: {self.item.name}")
+        self.assertContains(response, f"selected>{self.item.category.name}")
+        self.assertContains(response, f'name="name" value="{self.item.name}"')
+        self.assertContains(response, f'name="price" value="{self.item.price}.00"')
+
+    def test_valid_post_request(self):
+        """
+        The edit menu item view should edit a menu item's details
+        according to the data submitted in a valid POST request.
+        """
+        response = self.client.post(
+            reverse("cantina:edit", kwargs={"table": "menu", "id": self.item.id}),
+            {
+                "category": f"{self.item.category.id}",
+                "name": "Cosmic Control (Anejo)",
+                "price": "13",
+            },
+            follow=True,
+        )
+        item = MenuItem.objects.get(id=self.item.id)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.redirect_chain[0][0], f"/menu/{self.item.id}/")
+        self.assertEqual(response.templates[0].name, "cantina/menu_item.html")
+        self.assertEqual(item.category.name, self.item.category.name)
+        self.assertEqual(item.name, "Cosmic Control (Anejo)")
+        self.assertEqual(item.price, 13)
+
+    def test_invalid_post_request(self):
+        """
+        The edit menu item view should not edit a menu item's
+        information if the POST request is missing required information.
+        Required fields with missing values should display a message to
+        the user and previously submitted information should be
+        retained in the form.
+        """
+        response = self.client.post(
+            reverse("cantina:edit", kwargs={"table": "menu", "id": self.item.id}),
+            {
+                "category": f"{self.item.category.id}",
+                "name": "Cosmic Control (Anejo)",
+                "price": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        self.assertContains(response, f"selected>{self.item.category.name}")
+        self.assertContains(response, 'name="name" value="Cosmic Control (Anejo)"')
+        with self.assertRaises(MenuItem.DoesNotExist):
+            MenuItem.objects.get(name="Cosmic Control (Anejo)")
