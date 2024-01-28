@@ -899,7 +899,7 @@ class AddCustomerViewTestCase(TestCase):
         response = self.client.post(
             reverse("cantina:add", kwargs={"table": "customers"}),
             {
-                "last_name": "",
+                "last_name": "Neramani",
                 "first_name": "Cal'syee",
                 "planet": "",
                 "uba": "",
@@ -908,9 +908,10 @@ class AddCustomerViewTestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "This field is required.")
+        self.assertContains(response, 'name="last_name" value="Neramani"')
         self.assertContains(response, 'name="first_name" value="Cal&#x27;syee"')
         with self.assertRaises(Customer.DoesNotExist):
-            Customer.objects.get(first_name="Cal'syee")
+            Customer.objects.get(last_name="Neramani")
 
     def test_nonunique_customer(self):
         """
@@ -950,8 +951,9 @@ class AddMenuItemViewTestCase(TestCase):
 
     def test_get_request(self):
         """
-        The add menu item view should return a blank submission form for
-        adding a menu item upon receiving a GET request.
+        The add menu item view should return a blank submission form
+        (except for the category field) for adding a menu item upon
+        receiving a GET request.
         """
         response = self.client.get(
             reverse(
@@ -1004,6 +1006,7 @@ class AddMenuItemViewTestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "This field is required.")
+        self.assertContains(response, f"selected>{self.category.name}")
         self.assertContains(response, 'name="name" value="Grand Marnier"')
         with self.assertRaises(MenuItem.DoesNotExist):
             MenuItem.objects.get(name="Grand Marnier")
@@ -1036,7 +1039,8 @@ class AddInventoryItemViewTestCase(TestCase):
     def test_get_request(self):
         """
         The add inventory item view should return a blank submission
-        form for adding an inventory item upon receiving a GET request.
+        form (except for the category field) for adding an inventory
+        item upon receiving a GET request.
         """
         response = self.client.get(
             reverse(
@@ -1107,6 +1111,7 @@ class AddInventoryItemViewTestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "This field is required.")
+        self.assertContains(response, f"selected>{self.category.name}")
         self.assertContains(response, 'name="name" value="Asgardian Cognac"')
         self.assertContains(response, 'name="stock" value="50"')
         with self.assertRaises(InventoryItem.DoesNotExist):
@@ -1146,3 +1151,108 @@ class AddInventoryItemViewTestCase(TestCase):
             InventoryItem.objects.get(cost=60)
         self.assertEqual(asgardian_cognac.cost, 70)
         self.assertContains(response, "Inventory item with this Name already exists.")
+
+
+class AddComponentViewTestCase(TestCase):
+    def setUp(self):
+        menu_category = MenuItemCategory.objects.create(name="Wine")
+        inventory_category = InventoryItemCategory.objects.create(name="Wine")
+        self.item = MenuItem.objects.create(
+            name="Celestial Groves Chardonnay (Glass)", category=menu_category, price=6
+        )
+        self.ingredient = InventoryItem.objects.create(
+            name="Celestial Groves Chardonnay",
+            category=inventory_category,
+            stock=25,
+            cost=15,
+            reorder_point=5,
+            reorder_amount=20,
+        )
+
+    def test_get_request(self):
+        """
+        The add component view should return a blank submission form
+        (except for the item field) for adding a component upon
+        receiving a GET request.
+        """
+        response = self.client.get(
+            reverse(
+                "cantina:menu_options",
+                kwargs={"item": self.item.id, "table": "components"},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/add_instance.html")
+        self.assertContains(response, f"<h1>Add Component to {self.item.name}</h1>")
+        self.assertContains(response, f"selected>{self.item.name}")
+        self.assertContains(response, "Ingredient:")
+        self.assertContains(response, "Amount:")
+
+    def test_valid_post_request(self):
+        """
+        The add component view should add a component to the database
+        according to the data submitted in a valid POST request.
+        """
+        response = self.client.post(
+            reverse(
+                "cantina:menu_options",
+                kwargs={"item": self.item.id, "table": "components"},
+            ),
+            {"item": self.item.id, "ingredient": self.ingredient.id, "amount": 5},
+            follow=True,
+        )
+        recipe = Component.objects.get(item=self.item, ingredient=self.ingredient)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.redirect_chain[0][0], f"/menu/{self.item.id}/")
+        self.assertEqual(response.templates[0].name, "cantina/menu_item.html")
+        self.assertEqual(recipe.item.name, self.item.name)
+        self.assertEqual(recipe.ingredient.name, self.ingredient.name)
+        self.assertEqual(recipe.amount, 5)
+
+    def test_invalid_post_request(self):
+        """
+        The add component view should not add a component to the
+        database if the POST request is missing required information.
+        Required fields with missing values should display a message to
+        the user and previously submitted information should be retained
+        in the form.
+        """
+        response = self.client.post(
+            reverse(
+                "cantina:menu_options",
+                kwargs={"item": self.item.id, "table": "components"},
+            ),
+            {"item": self.item.id, "ingredient": self.ingredient.id},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        self.assertContains(response, f"selected>{self.item.name}")
+        self.assertContains(response, f"selected>{self.ingredient.name}")
+        with self.assertRaises(Component.DoesNotExist):
+            Component.objects.get(item=self.item, ingredient=self.ingredient)
+
+    def test_nonunique_component(self):
+        """
+        The add component view should not add a component to the
+        database if the component to be added has the same item and
+        ingredient as another component in the database.
+        """
+        Component.objects.create(item=self.item, ingredient=self.ingredient, amount=5)
+        response = self.client.post(
+            reverse(
+                "cantina:menu_options",
+                kwargs={"item": self.item.id, "table": "components"},
+            ),
+            {"item": self.item.id, "ingredient": self.ingredient.id, "amount": 3},
+        )
+        recipe = Component.objects.get(item=self.item, ingredient=self.ingredient)
+
+        with self.assertRaises(Component.DoesNotExist):
+            Component.objects.get(item=self.item, ingredient=self.ingredient, amount=3)
+        self.assertEqual(recipe.amount, 5)
+        self.assertContains(
+            response, "Component with this Item and Ingredient already exists."
+        )
