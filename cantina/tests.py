@@ -12,6 +12,7 @@ from .models import (
     InventoryItem,
     Component,
 )
+from .views import get_tab
 
 
 class CustomerTestCase(TestCase):
@@ -1340,7 +1341,7 @@ class AddPurchaseViewTestCase(TestCase):
             Purchase.objects.get(item=self.item)
 
 
-class EditCustomerViewCase(TestCase):
+class EditCustomerViewTestCase(TestCase):
     def setUp(self):
         self.customer = Customer.objects.create(
             last_name="Douglas",
@@ -1439,7 +1440,7 @@ class EditCustomerViewCase(TestCase):
             Customer.objects.get(last_name="Moondragon")
 
 
-class EditTabViewCase(TestCase):
+class EditTabViewTestCase(TestCase):
     def setUp(self):
         customer = Customer.objects.create(
             last_name="Annihilus",
@@ -1532,7 +1533,7 @@ class EditTabViewCase(TestCase):
             Tab.objects.get(closed=timestamp)
 
 
-class EditMenuItemViewCase(TestCase):
+class EditMenuItemViewTestCase(TestCase):
     def setUp(self):
         category = MenuItemCategory.objects.create(name="Tequila")
         self.item = MenuItem.objects.create(
@@ -1615,7 +1616,7 @@ class EditMenuItemViewCase(TestCase):
             MenuItem.objects.get(name="Cosmic Control (Anejo)")
 
 
-class EditInventoryItemViewCase(TestCase):
+class EditInventoryItemViewTestCase(TestCase):
     def setUp(self):
         category = InventoryItemCategory.objects.create(name="Wine")
         self.item = InventoryItem.objects.create(
@@ -1721,7 +1722,7 @@ class EditInventoryItemViewCase(TestCase):
             InventoryItem.objects.get(stock=30)
 
 
-class EditComponentViewCase(TestCase):
+class EditComponentViewTestCase(TestCase):
     def setUp(self):
         menu_category = MenuItemCategory.objects.create(name="Beer")
         inventory_category = InventoryItemCategory.objects.create(name="Beer")
@@ -1830,7 +1831,7 @@ class EditComponentViewCase(TestCase):
             Component.objects.get(ingredient=brood_budget_brew)
 
 
-class EditPurchaseViewCase(TestCase):
+class EditPurchaseViewTestCase(TestCase):
     def setUp(self):
         customer = Customer.objects.create(
             last_name="Mander-Azur",
@@ -1929,7 +1930,7 @@ class EditPurchaseViewCase(TestCase):
             Purchase.objects.get(item=asteroid_m_anejo_rum)
 
 
-class DeleteCustomerViewCase(TestCase):
+class DeleteCustomerViewTestCase(TestCase):
     def setUp(self):
         self.customer = Customer.objects.create(
             last_name="Knull",
@@ -1970,7 +1971,7 @@ class DeleteCustomerViewCase(TestCase):
             Customer.objects.get(id=self.customer.id)
 
 
-class DeleteTabViewCase(TestCase):
+class DeleteTabViewTestCase(TestCase):
     def setUp(self):
         customer = Customer.objects.create(
             last_name="Ronan",
@@ -2010,7 +2011,7 @@ class DeleteTabViewCase(TestCase):
             Tab.objects.get(id=self.tab.id)
 
 
-class DeleteMenuItemViewCase(TestCase):
+class DeleteMenuItemViewTestCase(TestCase):
     def setUp(self):
         category = MenuItemCategory.objects.create(name="Cocktail")
         self.item = MenuItem.objects.create(
@@ -2047,7 +2048,7 @@ class DeleteMenuItemViewCase(TestCase):
             MenuItem.objects.get(id=self.item.id)
 
 
-class DeleteInventoryItemViewCase(TestCase):
+class DeleteInventoryItemViewTestCase(TestCase):
     def setUp(self):
         category = InventoryItemCategory.objects.create(name="Miscellaneous")
         self.item = InventoryItem.objects.create(
@@ -2091,7 +2092,7 @@ class DeleteInventoryItemViewCase(TestCase):
             InventoryItem.objects.get(id=self.item.id)
 
 
-class DeleteComponentViewCase(TestCase):
+class DeleteComponentViewTestCase(TestCase):
     def setUp(self):
         menu_category = MenuItemCategory.objects.create(name="Liqueur")
         inventory_category = InventoryItemCategory.objects.create(name="Liqueur")
@@ -2142,7 +2143,7 @@ class DeleteComponentViewCase(TestCase):
             Component.objects.get(id=self.recipe.id)
 
 
-class DeletePurchaseViewCase(TestCase):
+class DeletePurchaseViewTestCase(TestCase):
     def setUp(self):
         customer = Customer.objects.create(
             last_name="Rom", planet="Galador", uba="4BKV7R0CKCQLYXSKFD9I70G8"
@@ -2188,7 +2189,7 @@ class DeletePurchaseViewCase(TestCase):
             Purchase.objects.get(id=self.purchase.id)
 
 
-class CompPurchaseViewCase(TestCase):
+class CompPurchaseViewTestCase(TestCase):
     def setUp(self):
         customer = Customer.objects.create(
             last_name="Korg", planet="Ria", uba="2C505IW11KW7O99Z4IDJTT0A"
@@ -2228,3 +2229,37 @@ class CompPurchaseViewCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.templates[0].name, "cantina/tab.html")
         self.assertEqual(purchase.amount, 0)
+
+
+class HelperFunctionsTestCase(TestCase):
+    def setUp(self):
+        self.customer = Customer.objects.create(
+            last_name="Uatu",
+            first_name="",
+            planet="Earth's Moon",
+            uba="JSVYP09MDWHDXHLFZSD6SUVF",
+        )
+
+    def test_get_tab_for_customer_with_no_open_tab(self):
+        """
+        The get_tab function should open a new tab for a customer if
+        the customer does not currently have a tab opened.
+        """
+        self.assertQuerySetEqual(self.customer.tab_set.all(), [])
+
+        tab = get_tab(self.customer.id)
+
+        self.assertQuerySetEqual(self.customer.tab_set.all(), [tab])
+
+    def test_get_tab_for_customer_with_an_open_tab(self):
+        """
+        The get_tab function should return a customer's open tab if the
+        customer does currently has an open tab.
+        """
+        tab = Tab.objects.create(customer=self.customer)
+        self.assertQuerySetEqual(self.customer.tab_set.all(), [tab])
+
+        current_tab = get_tab(self.customer.id)
+
+        self.assertEqual(tab, current_tab)
+        self.assertQuerySetEqual(self.customer.tab_set.all(), [tab])
