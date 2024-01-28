@@ -20,7 +20,7 @@ class Customer(models.Model):
     uba = models.CharField("UBA Number", max_length=24, blank=True)
 
     class Meta:
-        unique_together = ["last_name", "first_name"]
+        unique_together = ["last_name", "first_name", "uba"]
         ordering = ["last_name", "first_name"]
 
     def __str__(self):
