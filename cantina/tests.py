@@ -1523,8 +1523,6 @@ class EditTabViewCase(TestCase):
                 "closed": "2024-01-01 18:30:15",
             },
         )
-        tab = Tab.objects.get(id=self.tab.id)
-        print(tab.closed)
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "This field is required.")
