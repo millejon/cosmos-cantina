@@ -1828,3 +1828,110 @@ class EditComponentViewCase(TestCase):
         self.assertContains(response, f"selected>{self.recipe.ingredient.name}")
         with self.assertRaises(Component.DoesNotExist):
             Component.objects.get(ingredient=brood_budget_brew)
+
+
+class EditPurchaseViewCase(TestCase):
+    def setUp(self):
+        customer = Customer.objects.create(
+            last_name="Mander-Azur",
+            first_name="Karnak",
+            planet="Attilan",
+            uba="XM85Y2UEDR5GLWWFQLK9G4A9",
+        )
+        tab = Tab.objects.create(customer=customer)
+        category = MenuItemCategory.objects.create(name="Rum")
+        item = MenuItem.objects.create(
+            name="Terrigen Mists Aged Rum", category=category, price=10
+        )
+        self.purchase = Purchase.objects.create(
+            tab=tab, item=item, quantity=1, amount=10
+        )
+
+    def test_purchase_does_not_exist(self):
+        """
+        If the purchase does not exist, the edit purchase view should
+        return a 404 status code.
+        """
+        response = self.client.get(
+            reverse("cantina:edit", kwargs={"table": "purchases", "id": 1})
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_request(self):
+        """
+        The edit purchase view should return a submission form with all
+        of the fields filled with the purchase's current values upon
+        receiving a GET request.
+        """
+        response = self.client.get(
+            reverse(
+                "cantina:edit", kwargs={"table": "purchases", "id": self.purchase.id}
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/edit_instance.html")
+        self.assertContains(response, "<h1>Edit Purchase:")
+        self.assertContains(response, f"selected>{self.purchase.tab.customer.name}")
+        self.assertContains(response, f"selected>{self.purchase.item.name}")
+        self.assertContains(
+            response, f'name="quantity" value="{self.purchase.quantity}"'
+        )
+
+    def test_valid_post_request(self):
+        """
+        The edit purchase view should edit a purchase's details
+        according to the data submitted in a valid POST request.
+        """
+        response = self.client.post(
+            reverse(
+                "cantina:edit", kwargs={"table": "purchases", "id": self.purchase.id}
+            ),
+            {
+                "customer": f"{self.purchase.tab.customer.id}",
+                "item": f"{self.purchase.item.id}",
+                "quantity": "2",
+            },
+            follow=True,
+        )
+        purchase = Purchase.objects.get(id=self.purchase.id)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.redirect_chain[0][0], f"/tabs/{self.purchase.tab.id}/"
+        )
+        self.assertEqual(response.templates[0].name, "cantina/tab.html")
+        self.assertEqual(purchase.tab.id, self.purchase.tab.id)
+        self.assertEqual(purchase.item.name, self.purchase.item.name)
+        self.assertEqual(purchase.quantity, 2)
+        self.assertEqual(purchase.amount, self.purchase.item.price * 2)
+
+    def test_invalid_post_request(self):
+        """
+        The edit purchase view should not edit a purchase's information
+        if the POST request is missing required information. Required
+        fields with missing values should display a message to the user
+        and previously submitted information should be retained in the
+        form.
+        """
+        asteroid_m_anejo_rum = MenuItem.objects.create(
+            name="Asteroid M Anejo Rum", category=self.purchase.item.category, price=15
+        )
+        response = self.client.post(
+            reverse(
+                "cantina:edit", kwargs={"table": "purchases", "id": self.purchase.id}
+            ),
+            {
+                "customer": f"{self.purchase.tab.customer.id}",
+                "item": f"{asteroid_m_anejo_rum.id}",
+                "quantity": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        self.assertContains(response, f"selected>{self.purchase.tab.customer.name}")
+        self.assertContains(response, f"selected>{asteroid_m_anejo_rum.name}")
+        with self.assertRaises(Purchase.DoesNotExist):
+            Purchase.objects.get(item=asteroid_m_anejo_rum)
