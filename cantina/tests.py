@@ -1256,3 +1256,85 @@ class AddComponentViewTestCase(TestCase):
         self.assertContains(
             response, "Component with this Item and Ingredient already exists."
         )
+
+
+class AddPurchaseViewTestCase(TestCase):
+    def setUp(self):
+        category = MenuItemCategory.objects.create(name="Beer")
+        self.item = MenuItem.objects.create(
+            name="Phoenix Force IPA", category=category, price=4
+        )
+        self.customer = Customer.objects.create(
+            last_name="Warlock",
+            first_name="Adam",
+            planet="Earth",
+            uba="PFZK81L68I018D3591HWVNC1",
+        )
+
+    def test_get_request(self):
+        """
+        The add purchase view should return a blank submission form
+        (except for the item field) for adding a purchase upon receiving
+        a GET request.
+        """
+        response = self.client.get(
+            reverse(
+                "cantina:menu_options",
+                kwargs={"item": self.item.id, "table": "purchases"},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.templates[0].name, "cantina/add_instance.html")
+        self.assertContains(response, "<h1>Place Order</h1>")
+        self.assertContains(response, f"selected>{self.item.name}")
+        self.assertContains(response, f"{self.customer.name}</option>")
+        self.assertContains(response, "Quantity:")
+
+    def test_valid_post_request(self):
+        """
+        The add purchase view should add a purchase to the database
+        according to the data submitted in a valid POST request.
+        """
+        response = self.client.post(
+            reverse(
+                "cantina:menu_options",
+                kwargs={"item": self.item.id, "table": "purchases"},
+            ),
+            {"item": self.item.id, "customer": self.customer.id, "quantity": 2},
+            follow=True,
+        )
+        purchase = Purchase.objects.get(item=self.item)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.redirect_chain[0][0], f"/menu/categories/{self.item.category.id}/"
+        )
+        self.assertEqual(response.templates[0].name, "cantina/menu.html")
+        self.assertEqual(purchase.item.name, self.item.name)
+        self.assertEqual(purchase.tab.customer.name, self.customer.name)
+        self.assertEqual(purchase.quantity, 2)
+        self.assertEqual(purchase.amount, self.item.price * purchase.quantity)
+
+    def test_invalid_post_request(self):
+        """
+        The add purchase view should not add a purchase to the
+        database if the POST request is missing required information.
+        Required fields with missing values should display a message to
+        the user and previously submitted information should be retained
+        in the form.
+        """
+        response = self.client.post(
+            reverse(
+                "cantina:menu_options",
+                kwargs={"item": self.item.id, "table": "purchases"},
+            ),
+            {"item": self.item.id, "customer": self.customer.id},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This field is required.")
+        self.assertContains(response, f"selected>{self.item.name}")
+        self.assertContains(response, f"selected>{self.customer.name}")
+        with self.assertRaises(Purchase.DoesNotExist):
+            Purchase.objects.get(item=self.item)
